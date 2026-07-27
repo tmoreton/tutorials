@@ -3,7 +3,7 @@ title: "I Built a Rubber Duck That Roasts Your Code"
 published: false
 description: "Rubber-duck debugging, but the duck talks back — and it's Gordon Ramsay. One TypeScript file, a few CLI commands, and an HTML page."
 tags: ai, aws, typescript, tutorial
-cover_image:
+cover_image: https://unducked.com/assets/hero.png
 ---
 
 Every developer knows rubber-duck debugging: you explain your code to a rubber duck on your desk, and halfway through the explanation you spot the bug yourself. The duck just sits there. Silent. Judging.

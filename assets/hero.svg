@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#111111"/>
+  <style>
+    .mono { font-family:'Menlo','SFMono-Regular','Consolas',monospace; fill:#ffffff; white-space:pre; }
+    .brand { font-family:'Menlo',monospace; font-weight:700; fill:#ffffff; }
+    .tag { font-family:-apple-system,'Segoe UI',sans-serif; fill:#8a8a8a; }
+  </style>
+
+  <g font-size="42">
+    <text class="mono" x="130" y="196" xml:space="preserve">    _</text>
+    <text class="mono" x="130" y="238" xml:space="preserve"> __(.)&lt; this compiles? on what planet?</text>
+    <text class="mono" x="130" y="280" xml:space="preserve"> \___)</text>
+    <text class="mono" x="130" y="322" xml:space="preserve">~~~~~~~~</text>
+  </g>
+
+  <text class="brand" x="130" y="470" font-size="72">Unducked</text>
+  <text class="tag" x="133" y="518" font-size="29">rubber-duck debugging, but the duck talks back</text>
+</svg>
