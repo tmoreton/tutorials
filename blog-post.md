@@ -99,42 +99,71 @@ You get this structure:
 MyAgent/
 ├── agentcore/
 │   ├── agentcore.json        # Project config
-│   └── aws-targets.json      # Account + region
+│   ├── aws-targets.json      # Account + region
+│   └── cdk/                  # Deployment infra (you won't touch this)
 └── app/
     └── MyAgent/
         ├── main.ts           # Your agent ← this is the file that matters
+        ├── model/load.ts     # Which Bedrock model to use
         ├── package.json      # Dependencies
         └── tsconfig.json
 ```
+
+(The scaffold also drops in an example tool and an MCP client — nice for later, but we'll strip them out to keep this post to a pure chat agent.)
 
 ---
 
 ## Step 3: Write the agent
 
-Open `app/MyAgent/main.ts` and replace it with:
+The scaffold gives you a working agent out of the box — a small server built on `BedrockAgentCoreApp` that streams tokens back as they generate. Open `app/MyAgent/main.ts` and trim it down to a pure chat agent:
 
 ```typescript
-import { Agent } from '@strands-agents/sdk'
+import { BedrockAgentCoreApp } from 'bedrock-agentcore/runtime';
+import { Agent } from '@strands-agents/sdk';
+import { loadModel } from './model/load.js';
 
-const agent = new Agent({
-  systemPrompt: 'You are a helpful AI assistant. Be concise and direct.',
-})
+const SYSTEM_PROMPT = 'You are a helpful AI assistant. Be concise and direct.';
 
-export default async function handler(payload: { prompt?: string }) {
-  const userMessage = payload.prompt ?? 'Hello!'
-  const result = await agent.invoke(userMessage)
-  return { result: result.lastMessage }
+// One Agent per session so each conversation keeps its own history.
+const agentCache = new Map<string, Agent>();
+
+async function getOrCreateAgent(sessionId: string): Promise<Agent> {
+  let agent = agentCache.get(sessionId);
+  if (!agent) {
+    agent = new Agent({ model: await loadModel(), systemPrompt: SYSTEM_PROMPT });
+    agentCache.set(sessionId, agent);
+  }
+  return agent;
 }
+
+const app = new BedrockAgentCoreApp({
+  invocationHandler: {
+    async *process(payload: any, context: any) {
+      const agent = await getOrCreateAgent(context?.sessionId ?? 'default-session');
+      for await (const event of agent.stream(payload.prompt ?? '')) {
+        if (
+          event.type === 'modelStreamUpdateEvent' &&
+          event.event?.type === 'modelContentBlockDeltaEvent' &&
+          event.event.delta?.type === 'textDelta'
+        ) {
+          yield { data: event.event.delta.text };
+        }
+      }
+    },
+  },
+});
+
+app.run({ port: parseInt(process.env.PORT ?? '8080') });
 ```
 
-That's the whole thing. Let's break it down:
+Let's break it down:
 
-- `new Agent()` creates a Strands agent. Defaults to Claude Sonnet 4 on Bedrock. No API keys, no client setup. It uses your AWS credentials directly.
-- `systemPrompt` tells the model who it is. Customize this to whatever you want.
-- `agent.invoke(message)` sends the message through the agent loop and returns an `AgentResult`.
-- `result.lastMessage` is the text response.
+- `BedrockAgentCoreApp` is the server harness. It exposes the `/invocations` and `/ping` endpoints the runtime expects, so your code is just the handler.
+- `new Agent()` creates a Strands agent pointed at Claude Sonnet 4.5 on Bedrock (see `model/load.ts`). No API keys, no client setup. It uses your AWS credentials directly.
+- `agent.stream(message)` runs the agent loop and yields events as tokens generate. We filter for text deltas and `yield` each one — that's what makes the frontend feel alive instead of waiting for the full answer.
+- The session cache means "what did I just ask you?" works — each session id keeps its own conversation history.
 
-~10 lines of logic. That's your entire backend.
+(The full version in the repo adds an LRU bound on the cache and rolls back history if a stream fails mid-turn — worth keeping, but the above is the idea.)
 
 ---
 
@@ -197,26 +226,44 @@ If you see a response, your agent is live on AWS.
 One HTML file. No build step. No npm install. The core of it is one function:
 
 ```javascript
-// The only part that matters — call your agent and display the response
-async function send(text) {
+// The only part that matters — call your agent and stream the response
+async function send(text, onToken) {
   const res = await fetch("http://localhost:8080/invocations", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "text/event-stream", // required — the agent streams SSE
+      "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": sessionId, // keeps chat history
+    },
     body: JSON.stringify({ prompt: text }),
   });
-  const data = await res.json();
-  return data.result; // ← the agent's response
+
+  // The response is a Server-Sent Events stream: `data: "token"` frames.
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split("\n\n");
+    buffer = events.pop(); // keep any partial frame for the next read
+    for (const evt of events) {
+      const line = evt.split("\n").find((l) => l.startsWith("data:"));
+      if (line) onToken(JSON.parse(line.slice(5).trim()));
+    }
+  }
 }
 ```
 
-That's the entire integration. One `fetch` to `localhost:8080/invocations` with a JSON body containing your prompt. The rest is just HTML and CSS to make it look like a chat window.
+Two things bit me here, so they're worth calling out: the server **requires** the `Accept: text/event-stream` header (you get a JSON error without it), and the response is not a single JSON object — it's an SSE stream of JSON-encoded token strings. In exchange, you get ChatGPT-style token-by-token rendering for free. The rest is just HTML and CSS to make it look like a chat window.
 
 The full `index.html` (dark theme, chat bubbles, enter-to-send) is in the repo. Clone it, run `agentcore dev`, open the file in your browser. That's your ChatGPT.
 
 ```bash
 # Grab the frontend
-git clone https://github.com/tmoreton/chatgpt-clone-aws
-open chatgpt-clone-aws/index.html
+git clone https://github.com/tmoreton/tutorials
+open tutorials/index.html
 ```
 
 ---
@@ -244,7 +291,7 @@ https://YOUR_USERNAME.github.io/my-ai-chat
 
 HTTPS, free, auto-deploys on push. No AWS service needed for the frontend.
 
-> **Heads up:** Right now the frontend calls `localhost:8080`, so you need `agentcore dev` running locally. In Post 2, we add API Gateway as a public proxy in front of your deployed agent. You'll update one line in the frontend, push, and it's live for anyone.
+> **Heads up:** The deployed AgentCore endpoint requires AWS-signed (SigV4) requests, so a browser can't call it directly — that's why the frontend calls `localhost:8080` and needs `agentcore dev` running. The repo also includes the fix: a small streaming Lambda proxy behind CloudFront (`proxy/`) that signs requests to the runtime, so the hosted frontend talks to the production agent. Post 2 walks through building it — including the CloudFront OAC wrinkles (the `x-amz-content-sha256` header, the double invoke permission) that cost me an afternoon.
 
 ---
 
@@ -256,9 +303,13 @@ These cost me time so they don't cost you:
 
 2. **First `agentcore deploy` takes 3-5 minutes.** CDK bootstraps your account on the first run. Subsequent deploys are faster.
 
-3. **TypeScript compilation errors.** Make sure `"type": "module"` is set in package.json and your tsconfig is correct. Run `npm run build` locally to catch errors before deploying.
+3. **The response is a stream, not JSON.** The agent server speaks Server-Sent Events and *requires* an `Accept: text/event-stream` header. If your frontend does `res.json()` expecting `{result: "..."}`, you'll get an error object instead. Read the stream (see Step 6).
 
-4. **Cold starts.** The runtime scales down when idle. First request after inactivity takes extra seconds.
+4. **The deployed endpoint isn't browser-callable.** It requires SigV4-signed requests. Don't try to sign from client-side JS — you'd be shipping AWS credentials in page source. Put a proxy in front (Post 2).
+
+5. **TypeScript compilation errors.** Make sure `"type": "module"` is set in package.json and your tsconfig is correct. Run `npm run build` locally to catch errors before deploying.
+
+6. **Cold starts.** The runtime scales down when idle. First request after inactivity takes extra seconds.
 
 
 ---
@@ -269,7 +320,7 @@ Right now this is a starting point. It works locally, it's deployed, it's cheap.
 
 The next posts in this series fix that:
 
-- **Post 2: Add memory + a public endpoint** — AgentCore Memory for conversation persistence. API Gateway for a browser-callable URL.
+- **Post 2: Add memory + a public endpoint** — AgentCore Memory for conversation persistence. A streaming Lambda proxy behind CloudFront for a browser-callable URL.
 - **Post 3: Add authentication** — Cognito so each user gets their own sessions.
 - **Post 4: Chat with your documents** — RAG with Bedrock Knowledge Bases.
 - **Post 5: Add guardrails** — Content filtering, PII redaction, topic blocking.
@@ -284,8 +335,8 @@ Each post builds on this one. Same agent at the core, progressively more capable
 
 | Layer | What | How |
 |-------|------|-----|
-| Model | Claude Sonnet 4 | Amazon Bedrock |
-| Agent | ~10 lines of TypeScript | Strands Agents SDK |
+| Model | Claude Sonnet 4.5 | Amazon Bedrock |
+| Agent | ~40 lines of TypeScript | Strands Agents SDK + AgentCore app server |
 | Backend hosting | `agentcore deploy` | AgentCore Runtime |
 | Frontend hosting | Push to GitHub | GitHub Pages |
 
@@ -295,7 +346,7 @@ All deployed from your terminal. Zero console visits.
 
 ## Source
 
-[The complete code for this tutorial is on GitHub →](https://github.com/tmoreton/chatgpt-clone-aws)
+[The complete code for this tutorial is on GitHub →](https://github.com/tmoreton/tutorials)
 
 ---
 
