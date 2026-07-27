@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Unducked ASCII duck">
   <rect width="64" height="64" rx="12" fill="#111111"/>
-  <text x="32" y="30" text-anchor="middle" fill="#ffffff"
-        font-family="Menlo, 'SFMono-Regular', Consolas, monospace" font-size="20" font-weight="700">(.)&lt;</text>
-  <text x="32" y="50" text-anchor="middle" fill="#ffffff" opacity="0.7"
-        font-family="Menlo, 'SFMono-Regular', Consolas, monospace" font-size="16">~~~~</text>
+  <g fill="#ffffff" font-family="Menlo,'SFMono-Regular',Consolas,monospace" font-weight="700" font-size="19" xml:space="preserve">
+    <text x="6" y="30">_(.)&lt;</text>
+    <text x="4" y="49">\__)</text>
+  </g>
 </svg>
