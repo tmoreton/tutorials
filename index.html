@@ -36,12 +36,20 @@
             align-items: center;
             gap: 0.5rem;
         }
-        header svg { color: var(--accent); }
+        header .brand-icon { color: var(--accent); }
         header h1 {
             font-size: 1.125rem;
             font-weight: 600;
             letter-spacing: -0.01em;
         }
+        #repo-link {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            color: var(--text-secondary);
+            transition: color 0.15s;
+        }
+        #repo-link:hover { color: var(--accent); }
 
         #chat {
             flex: 1;
@@ -152,11 +160,22 @@
         #send-btn:active:not(:disabled) { transform: scale(0.95); }
 
         #footer {
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
             padding: 0.5rem;
             font-size: 0.6875rem;
             color: var(--text-secondary);
         }
+        #footer .powered { opacity: 0.7; }
+        #footer .logos {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        #footer .logos img { height: 14px; width: auto; display: block; }
+        #footer .dot { opacity: 0.4; }
 
         #chat::-webkit-scrollbar { width: 5px; }
         #chat::-webkit-scrollbar-track { background: transparent; }
@@ -170,10 +189,15 @@
 </head>
 <body>
     <header>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
         </svg>
         <h1>Relay</h1>
+        <a id="repo-link" href="https://github.com/tmoreton/tutorials" target="_blank" rel="noopener" aria-label="View source on GitHub" title="View source on GitHub">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.04-.02-2.04-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.82 1.1.82 2.22 0 1.6-.02 2.89-.02 3.28 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/>
+            </svg>
+        </a>
     </header>
 
     <div id="chat"></div>
@@ -190,7 +214,18 @@
         </div>
     </div>
 
-    <div id="footer">Powered by Strands Agents &middot; Amazon Bedrock</div>
+    <div id="footer">
+        <span class="powered">Powered by</span>
+        <span class="logos">
+            <img src="assets/strands.svg" alt="Strands Agents" title="Strands Agents">
+            <span>Strands Agents</span>
+        </span>
+        <span class="dot">&middot;</span>
+        <span class="logos">
+            <img src="assets/aws.svg" alt="Amazon Web Services" title="Amazon Bedrock">
+            <span>Amazon Bedrock</span>
+        </span>
+    </div>
 
     <script>
         // Local dev: agentcore dev server. Production: CloudFront → Lambda proxy → AgentCore Runtime.

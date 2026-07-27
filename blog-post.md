@@ -14,7 +14,7 @@ Not a wrapper. Not a "paste your API key into someone else's UI" tutorial. A con
 
 Turns out, it's about 30 minutes of work. One TypeScript file, a few CLI commands, and a single HTML page for the frontend. This post walks you through all of it.
 
-By the end, you'll have a working chat interface backed by Claude Sonnet on AWS, deployed to a hosted endpoint, costing fractions of a cent per conversation. And it's the foundation for everything that comes next: memory, authentication, document Q&A, guardrails. But today we keep it dead simple.
+By the end, you'll have a working chat interface backed by a model on Amazon Bedrock (we'll use the ultra-cheap Amazon Nova Micro), deployed to a hosted endpoint, costing fractions of a cent per conversation. And it's the foundation for everything that comes next: memory, authentication, document Q&A, guardrails. But today we keep it dead simple.
 
 **What you'll need:** An AWS account, Node.js 22+, and npm. That's it.
 
@@ -27,7 +27,7 @@ Let's go.
 Before we touch code, here's what we're building:
 
 ```
-Browser (HTML + JS) → AgentCore Runtime (hosted endpoint) → Strands Agent → Bedrock (Claude)
+Browser (HTML + JS) → AgentCore Runtime (hosted endpoint) → Strands Agent → Bedrock (Nova Micro)
 ```
 
 You write a Strands agent in TypeScript. The AgentCore CLI deploys it as a hosted endpoint. Your frontend sends messages to that endpoint. Done.
@@ -159,7 +159,7 @@ app.run({ port: parseInt(process.env.PORT ?? '8080') });
 Let's break it down:
 
 - `BedrockAgentCoreApp` is the server harness. It exposes the `/invocations` and `/ping` endpoints the runtime expects, so your code is just the handler.
-- `new Agent()` creates a Strands agent pointed at Claude Sonnet 4.5 on Bedrock (see `model/load.ts`). No API keys, no client setup. It uses your AWS credentials directly.
+- `new Agent()` creates a Strands agent pointed at a Bedrock model (see `model/load.ts`). This demo uses **Amazon Nova Micro** — Bedrock's cheapest text model, so a conversation costs a fraction of a cent. Swap the model id for Claude Sonnet when you want more reasoning power. No API keys, no client setup; it uses your AWS credentials directly.
 - `agent.stream(message)` runs the agent loop and yields events as tokens generate. We filter for text deltas and `yield` each one — that's what makes the frontend feel alive instead of waiting for the full answer.
 - The session cache means "what did I just ask you?" works — each session id keeps its own conversation history.
 
@@ -335,7 +335,7 @@ Each post builds on this one. Same agent at the core, progressively more capable
 
 | Layer | What | How |
 |-------|------|-----|
-| Model | Claude Sonnet 4.5 | Amazon Bedrock |
+| Model | Amazon Nova Micro (swappable) | Amazon Bedrock |
 | Agent | ~40 lines of TypeScript | Strands Agents SDK + AgentCore app server |
 | Backend hosting | `agentcore deploy` | AgentCore Runtime |
 | Frontend hosting | Push to GitHub | GitHub Pages |

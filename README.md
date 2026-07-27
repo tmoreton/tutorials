@@ -5,7 +5,7 @@ A minimal ChatGPT-style chat interface powered by the Strands Agents SDK and Ama
 ## Architecture
 
 ```
-index.html → AgentCore Runtime → Strands Agent → Bedrock (Claude Sonnet 4)
+index.html → AgentCore Runtime → Strands Agent → Bedrock (Amazon Nova Micro)
 ```
 
 ## Prerequisites

@@ -1,5 +1,7 @@
 import { BedrockModel } from '@strands-agents/sdk/models/bedrock';
 
 export function loadModel(): BedrockModel {
-  return new BedrockModel({ modelId: 'global.anthropic.claude-sonnet-4-5-20250929-v1:0' });
+  // Nova Micro: cheapest Bedrock text model — ideal for a demo. It has no
+  // on-demand base-ID support, so the cross-region inference profile ID is required.
+  return new BedrockModel({ modelId: 'us.amazon.nova-micro-v1:0' });
 }
