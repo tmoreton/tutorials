@@ -1,38 +1,46 @@
-# Build Your Own ChatGPT with AWS
+# 🦆 Unducked
 
-A minimal ChatGPT-style chat interface powered by the Strands Agents SDK and Amazon Bedrock AgentCore.
+Rubber-duck debugging, but the duck talks back. Paste your code and a foul-mouthed rubber duck reviews it like Gordon Ramsay reviews a risotto — it roasts you, then finds the actual bug and hands you the fix.
 
-**🔗 Live demo: [unducked.com](https://unducked.com/)**
+**🔗 Live: [unducked.com](https://unducked.com/)**
 
-[![Unducked — the rubber duck that reviews your code](assets/screenshot.png)](https://unducked.com/)
+[![Unducked — the rubber duck that reviews your code](assets/hero.png)](https://unducked.com/)
+
+Built on the Strands Agents SDK, deployed on Amazon Bedrock AgentCore, hosted on GitHub Pages. The whole thing is one TypeScript file, a few CLI commands, and a single HTML page — the personality is just a system prompt.
 
 ## Architecture
 
 ```
-index.html → AgentCore Runtime → Strands Agent → Bedrock (Amazon Nova Micro)
+Browser (unducked.com)
+  → CloudFront + Lambda proxy   (public HTTPS; signs requests for the browser)
+    → AgentCore Runtime          (hosted agent endpoint)
+      → Strands Agent            (Chef Duck persona)
+        → Bedrock (Claude Haiku 4.5)
 ```
+
+Locally, the frontend skips the proxy and talks straight to `agentcore dev` on `localhost:8080`.
 
 ## Prerequisites
 
 - AWS account with credentials configured
-- Node.js 22+
-- npm
+- Node.js 22+ and npm
+- The AgentCore CLI: `npm install -g @aws/agentcore`
+- Claude Haiku 4.5 access enabled in Bedrock
 
-## Quick Start
+## Quick start (local)
 
 ```bash
-# 1. Install the AgentCore CLI
-npm install -g @aws/agentcore
-
-# 2. Install agent dependencies
+# 1. Install the agent's dependencies
 cd app/MyAgent && npm install && cd ../..
 
-# 3. Start the local dev server
+# 2. Start the local dev server (compiles + serves on http://localhost:8080)
 agentcore dev
 
-# 4. Open the frontend
+# 3. Open the frontend
 open index.html
 ```
+
+Paste some code, hit **Roast it**, and watch Chef Duck stream a review back.
 
 ## Deploy
 
@@ -41,42 +49,46 @@ open index.html
 agentcore deploy
 
 # Push to GitHub and enable Pages: Settings > Pages > Source: main branch, / (root)
-git add . && git commit -m "initial commit" && git push
+git add . && git commit -m "ship the duck" && git push
 ```
 
-The deployed AgentCore endpoint requires SigV4-signed requests, so the browser
+The deployed AgentCore endpoint requires SigV4-signed requests, so a browser
 can't call it directly. The `proxy/` folder holds a streaming Lambda (behind
 CloudFront) that signs on the browser's behalf — see [DEPLOYMENT.md](DEPLOYMENT.md)
-for the full setup and the gotchas involved.
+for the full setup and the gotchas (`x-amz-content-sha256`, the double invoke
+permission, CORS preflight) that cost an afternoon.
 
-## Project Structure
+## The duck's personality
+
+Everything that makes it "Chef Duck" is the system prompt in `app/MyAgent/main.ts`.
+Swap those few sentences and the same stack becomes a patient mentor, a
+passive-aggressive senior dev, or a security auditor. The model didn't change —
+the prompt did.
+
+## Project structure
 
 ```
-tutorials/
+unducked/
 ├── app/MyAgent/
-│   ├── main.ts               # Agent code (streaming Strands + AgentCore app)
-│   ├── model/load.ts         # Which Bedrock model (Nova Micro)
+│   ├── main.ts               # The agent — Chef Duck persona + streaming server
+│   ├── model/load.ts         # Which Bedrock model (Claude Haiku 4.5)
 │   ├── package.json
 │   └── tsconfig.json
-├── index.html                # Chat UI (ChatGPT-style)
-├── proxy/                     # Lambda proxy for the public endpoint
-├── starter/                  # Minimal, self-contained version for the video tutorial
+├── index.html                # The UI — paste box, ASCII duck, streamed roast
+├── proxy/                    # Streaming Lambda proxy for the public endpoint
+├── starter/                  # Minimal, self-contained version for the walkthrough
+├── assets/                   # Hero/OG image, favicon, logos
 ├── DEPLOYMENT.md             # How the public deployment actually works
-├── blog-post.md              # The accompanying tutorial
+├── blog-post.md              # The accompanying write-up
 └── README.md
 ```
 
-## Blog Series
+## Cost & safety
 
-This repo accompanies the "Build Your Own ChatGPT" blog series on dev.to:
-
-1. **Build Your Own ChatGPT in 30 Minutes** (this repo)
-2. Add memory + a public endpoint
-3. Add authentication
-4. Chat with your documents (RAG)
-5. Add guardrails
-6. Give it tools
-7. Go to production
+Claude Haiku 4.5 is ~$1/$5 per million tokens on Bedrock — fractions of a cent
+per roast. The public endpoint is unauthenticated, so the Lambda proxy has a
+reserved-concurrency cap (2) to bound spend. Add an AWS budget alarm if you
+share it widely.
 
 ## License
 
