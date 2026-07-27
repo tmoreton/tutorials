@@ -1,145 +1,121 @@
 ---
-title: "Build Your Own ChatGPT in 30 Minutes"
+title: "I Built a Rubber Duck That Roasts Your Code"
 published: false
-description: "One TypeScript file, three CLI commands, and an HTML page. That's the whole thing."
+description: "Rubber-duck debugging, but the duck talks back — and it's Gordon Ramsay. One TypeScript file, a few CLI commands, and an HTML page."
 tags: ai, aws, typescript, tutorial
-cover_image: 
+cover_image:
 ---
 
-Here's the pitch. You've used ChatGPT. You've probably used Claude, Gemini, maybe a few others. And at some point, the thought crossed your mind:
+Every developer knows rubber-duck debugging: you explain your code to a rubber duck on your desk, and halfway through the explanation you spot the bug yourself. The duck just sits there. Silent. Judging.
 
-> What would it take to build my own?
+I wanted a duck that judges *out loud*.
 
-Not a wrapper. Not a "paste your API key into someone else's UI" tutorial. A conversational AI you own. The model, the infrastructure, the deployment, the cost.
+So I built **Unducked** — paste in your code, and a foul-mouthed rubber duck reviews it like Gordon Ramsay reviews a risotto. It roasts you. It calls your function RAW. And then, annoyingly, it finds the actual bug and hands you the fix.
 
-Turns out, it's about 30 minutes of work. One TypeScript file, a few CLI commands, and a single HTML page for the frontend. This post walks you through all of it.
+It's genuinely useful — the roast is a real code review — and it's the kind of thing you screenshot and send to the group chat. Best of all, the whole thing is one TypeScript file, a few CLI commands, and a single HTML page. About 30 minutes of work.
 
-By the end, you'll have a working chat interface backed by a model on Amazon Bedrock (we'll use the ultra-cheap Amazon Nova Micro), deployed to a hosted endpoint, costing fractions of a cent per conversation. And it's the foundation for everything that comes next: memory, authentication, document Q&A, guardrails. But today we keep it dead simple.
-
-**What you'll need:** An AWS account, Node.js 22+, and npm. That's it.
-
-Let's go.
+Here's how to build your own.
 
 ---
 
 ## The mental model: an agent is a model + a prompt
 
-Before we touch code, here's what we're building:
+The "AI" here isn't complicated. An agent is just a model with a personality bolted on via a system prompt. That's the entire trick — the model didn't change, the prompt did.
 
+Here's the shape of what we're building:
+
+```text
+Browser (HTML + JS) → AgentCore Runtime (hosted endpoint) → Strands Agent → Bedrock (Claude Haiku)
 ```
-Browser (HTML + JS) → AgentCore Runtime (hosted endpoint) → Strands Agent → Bedrock (Nova Micro)
-```
 
-You write a Strands agent in TypeScript. The AgentCore CLI deploys it as a hosted endpoint. Your frontend sends messages to that endpoint. Done.
+You write a Strands agent in TypeScript. The AgentCore CLI deploys it as a hosted endpoint on AWS. Your frontend sends code to that endpoint and streams the roast back.
 
-No Lambda functions. No API Gateway. No Docker. Just TypeScript and a couple CLI commands.
+No Lambda functions to hand-write. No API Gateway. No Docker. Just TypeScript and a couple of CLI commands.
 
 ---
 
 ## Step 1: Set up your environment
 
-The fastest path: the [Agent Toolkit for AWS](https://github.com/aws/agent-toolkit-for-aws) handles credentials, CLI tools, and login in one shot:
+You'll need an AWS account, Node.js 22+, and npm.
+
+**The fast path:** if you use a coding agent (Claude Code, Cursor, Kiro, Codex), the [Agent Toolkit for AWS](https://github.com/aws/agent-toolkit-for-aws) handles credentials and CLI tools in one shot — just ask it to set up AWS access.
+
+**Or, manually:**
 
 ```bash
-aws configure agent-toolkit
-```
-
-That's it. Move to the next step.
-
-**Or, do it manually:**
-
-```bash
-# 1. Install the AWS CLI (if you don't have it)
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip && sudo ./aws/install
-
-# 2. Configure your AWS credentials
+# Configure AWS credentials, then verify
 aws configure
-# (enter your Access Key ID, Secret Access Key, region, output format)
-
-# 3. Verify it works
 aws sts get-caller-identity
+
+# Install the AgentCore CLI and the AWS CDK (AgentCore uses CDK to deploy)
+npm install -g @aws/agentcore aws-cdk
 ```
 
-Either way, once your credentials are set, install the AgentCore CLI:
-
-```bash
-npm install -g @aws/agentcore
-```
-
-That's your toolchain ready.
+That's your toolchain.
 
 ---
 
 ## Step 2: Scaffold the project
 
-One command scaffolds the entire project:
+One command scaffolds everything:
 
 ```bash
-agentcore create \
-  --name MyAgent \
-  --framework Strands \
+agentcore create --name Unducked --no-agent
+cd Unducked
+agentcore add agent \
+  --name Unducked \
+  --type create \
+  --build CodeZip \
   --language TypeScript \
-  --protocol HTTP \
+  --framework Strands \
   --model-provider Bedrock \
   --memory none
 ```
 
-What each flag does:
-- `--name` – The project name (alphanumeric, starts with a letter, max 36 characters).
-- `--framework` – The agent framework. Supported values: `Strands`, `LangChain_LangGraph`, `GoogleADK`, `OpenAIAgents`.
-- `--language` – The language for generated code. Supported values: `TypeScript`, `Python`.
-- `--protocol` – The protocol mode. Supported values: `HTTP` (default), `MCP`, `A2A`.
-- `--model-provider` – The model provider. Supported values: `Bedrock`, `Anthropic`, `OpenAI`, `Gemini`.
-- `--memory` – Memory configuration. Supported values: `none`, `shortTerm`, `longAndShortTerm`.
-
 You get this structure:
 
-```
-MyAgent/
-├── agentcore/
-│   ├── agentcore.json        # Project config
-│   ├── aws-targets.json      # Account + region
-│   └── cdk/                  # Deployment infra (you won't touch this)
-└── app/
-    └── MyAgent/
-        ├── main.ts           # Your agent ← this is the file that matters
-        ├── model/load.ts     # Which Bedrock model to use
-        ├── package.json      # Dependencies
-        └── tsconfig.json
+```text
+Unducked/
+├── agentcore/                # Config + CDK (you won't touch this)
+└── app/Unducked/
+    ├── main.ts               # The agent ← the file that matters
+    ├── model/load.ts         # Which Bedrock model to use
+    ├── package.json
+    └── tsconfig.json
 ```
 
-(The scaffold also drops in an example tool and an MCP client — nice for later, but we'll strip them out to keep this post to a pure chat agent.)
+The scaffold drops in an example tool and an MCP client. Nice for later — we'll strip them out for a pure roasting duck.
 
 ---
 
-## Step 3: Write the agent
+## Step 3: Write the duck
 
-The scaffold gives you a working agent out of the box — a small server built on `BedrockAgentCoreApp` that streams tokens back as they generate. Open `app/MyAgent/main.ts` and trim it down to a pure chat agent:
+This is where the personality lives. Open `app/Unducked/main.ts` and trim it to this:
 
 ```typescript
+// app/Unducked/main.ts
 import { BedrockAgentCoreApp } from 'bedrock-agentcore/runtime';
 import { Agent } from '@strands-agents/sdk';
 import { loadModel } from './model/load.js';
 
-const SYSTEM_PROMPT = 'You are a helpful AI assistant. Be concise and direct.';
+const SYSTEM_PROMPT = `You are Chef Duck — a foul-mouthed-but-brilliant rubber
+duck that reviews code like Gordon Ramsay runs a kitchen.
 
-// One Agent per session so each conversation keeps its own history.
-const agentCache = new Map<string, Agent>();
+- Open with a short, savage roast of the CODE (never the person). Kitchen
+  metaphors encouraged: "this function is RAW", "it's so nested it's got its
+  own zip code".
+- Then ACTUALLY HELP. Every roast must name the concrete bug and give the fix.
+  Useful first, funny second.
+- If the code is genuinely good, be begrudgingly impressed. Don't invent bugs
+  just to be mean.
+- Keep it tight. PG-13 — spicy, not vile. Plain prose, no headings, a fenced
+  code block for the fix.`;
 
-async function getOrCreateAgent(sessionId: string): Promise<Agent> {
-  let agent = agentCache.get(sessionId);
-  if (!agent) {
-    agent = new Agent({ model: await loadModel(), systemPrompt: SYSTEM_PROMPT });
-    agentCache.set(sessionId, agent);
-  }
-  return agent;
-}
+const agent = new Agent({ model: await loadModel(), systemPrompt: SYSTEM_PROMPT });
 
 const app = new BedrockAgentCoreApp({
   invocationHandler: {
-    async *process(payload: any, context: any) {
-      const agent = await getOrCreateAgent(context?.sessionId ?? 'default-session');
+    async *process(payload: any) {
       for await (const event of agent.stream(payload.prompt ?? '')) {
         if (
           event.type === 'modelStreamUpdateEvent' &&
@@ -156,89 +132,66 @@ const app = new BedrockAgentCoreApp({
 app.run({ port: parseInt(process.env.PORT ?? '8080') });
 ```
 
-Let's break it down:
+Three pieces:
 
-- `BedrockAgentCoreApp` is the server harness. It exposes the `/invocations` and `/ping` endpoints the runtime expects, so your code is just the handler.
-- `new Agent()` creates a Strands agent pointed at a Bedrock model (see `model/load.ts`). This demo uses **Amazon Nova Micro** — Bedrock's cheapest text model, so a conversation costs a fraction of a cent. Swap the model id for Claude Sonnet when you want more reasoning power. No API keys, no client setup; it uses your AWS credentials directly.
-- `agent.stream(message)` runs the agent loop and yields events as tokens generate. We filter for text deltas and `yield` each one — that's what makes the frontend feel alive instead of waiting for the full answer.
-- The session cache means "what did I just ask you?" works — each session id keeps its own conversation history.
+1. **The system prompt** *is* the product. Everything that makes it "Chef Duck" is those few sentences.
+2. **`BedrockAgentCoreApp`** wires the agent to the HTTP endpoints the runtime expects — you just write the handler.
+3. **Stream the roast back** by iterating over `agent.stream()` and yielding each text delta.
 
-(The full version in the repo adds an LRU bound on the cache and rolls back history if a stream fails mid-turn — worth keeping, but the above is the idea.)
+> **Gotcha that cost me time:** the stream emits several event types, and you can only reach `event.event` after narrowing on `event.type` first. The three-part `if` above is what actually compiles — a bare `event.event?.delta?.type` throws a TypeScript error. Copy it exactly.
+
+`loadModel()` points at **Claude Haiku 4.5** — fast, cheap (~$1/$5 per million tokens on Bedrock), and sharp enough that it doesn't invent bugs in clean code, which cheaper models tend to do. Swap the model ID in `model/load.ts` for something heavier if you want.
 
 ---
 
 ## Step 4: Test locally
 
-Before deploying anywhere, run it on your machine:
-
 ```bash
 agentcore dev
 ```
 
-This installs dependencies, compiles TypeScript, starts a local server on port 8080, and opens a browser-based inspector where you can chat with your agent.
-
-In a separate terminal:
+In another terminal:
 
 ```bash
-agentcore dev "What is the capital of France?"
+agentcore dev "function last(arr) { return arr[arr.length]; }"
 ```
 
-You should see the response stream back. If that works, your agent runs.
-
-> **Heads up:** First run takes a moment while it installs packages and compiles. After that, starts are near-instant with hot reload.
+You'll get an off-by-one roast streamed back, live. If that works, your duck is alive.
 
 ---
 
 ## Step 5: Deploy to AWS
 
-One command:
-
 ```bash
 agentcore deploy
 ```
 
-The CLI:
-1. Compiles TypeScript and packages it as a CodeZip archive
-2. Uses CDK to synthesize and deploy CloudFormation resources
-3. Creates IAM roles and an AgentCore Runtime endpoint
-4. Configures CloudWatch logging
-
-> **Heads up:** First deploy takes a few minutes while CDK bootstraps. Subsequent deploys are faster. Use `agentcore deploy --dry-run` to preview changes without deploying.
-
-Test your deployed agent:
+The CLI compiles your TypeScript, packages it, uses CDK to stand up the IAM roles and an AgentCore Runtime endpoint, and wires up CloudWatch logging. First deploy takes a few minutes while CDK bootstraps; after that it's fast.
 
 ```bash
-agentcore invoke "Hello! What can you help me with?"
+agentcore invoke "def add(a, b): return a - b" --stream
 ```
 
-Stream the response in real time:
-
-```bash
-agentcore invoke "Tell me a joke" --stream
-```
-
-If you see a response, your agent is live on AWS.
+If the duck tells you your `add` function is a liar, you're live on AWS.
 
 ---
 
 ## Step 6: The frontend
 
-One HTML file. No build step. No npm install. The core of it is one function:
+One HTML file, no build step. During local dev it talks to `agentcore dev` on port 8080. The core is one function — send code, stream the roast:
 
 ```javascript
-// The only part that matters — call your agent and stream the response
-async function send(text, onToken) {
+async function roast(code, onToken) {
   const res = await fetch("http://localhost:8080/invocations", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Accept": "text/event-stream", // required — the agent streams SSE
-      "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": sessionId, // keeps chat history
+      "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": sessionId,
     },
-    body: JSON.stringify({ prompt: text }),
+    body: JSON.stringify({ prompt: code }),
   });
 
-  // The response is a Server-Sent Events stream: `data: "token"` frames.
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -246,88 +199,40 @@ async function send(text, onToken) {
     const { done, value } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
-    const events = buffer.split("\n\n");
-    buffer = events.pop(); // keep any partial frame for the next read
-    for (const evt of events) {
-      const line = evt.split("\n").find((l) => l.startsWith("data:"));
+    const frames = buffer.split("\n\n");
+    buffer = frames.pop(); // keep any partial frame
+    for (const frame of frames) {
+      const line = frame.split("\n").find((l) => l.startsWith("data:"));
       if (line) onToken(JSON.parse(line.slice(5).trim()));
     }
   }
 }
 ```
 
-Two things bit me here, so they're worth calling out: the server **requires** the `Accept: text/event-stream` header (you get a JSON error without it), and the response is not a single JSON object — it's an SSE stream of JSON-encoded token strings. In exchange, you get ChatGPT-style token-by-token rendering for free. The rest is just HTML and CSS to make it look like a chat window.
+Two things worth calling out. The server **requires** the `Accept: text/event-stream` header — without it you get a JSON error, not a stream. And the response isn't a single JSON blob; it's a Server-Sent Events stream of token strings. In exchange you get roasts that type out live, like the duck is thinking. The rest is HTML and CSS — a monospace paste box, a "Roast it" button, and a little ASCII duck up top.
 
-The full `index.html` (dark theme, chat bubbles, enter-to-send) is in the repo. Clone it, run `agentcore dev`, open the file in your browser. That's your ChatGPT.
+Since the roast comes back as Markdown (bold, code blocks), render it into HTML — but **escape everything before formatting**, since you're injecting the model's output into the page. A dozen lines of regex handles bold, code fences, and headings safely.
 
 ```bash
-# Grab the frontend
 git clone https://github.com/tmoreton/tutorials
 open tutorials/index.html
 ```
 
 ---
 
-## Step 7: Deploy the frontend with GitHub Pages
+## Step 7: Put it on the internet
 
-Push your project to GitHub:
+Push to GitHub, then **Settings → Pages → Deploy from branch `main`, folder `/`**. A minute later your duck is live at `https://YOUR_USERNAME.github.io/tutorials` — HTTPS, free, auto-deploying on every push. Point a custom domain at it (say, `unducked.com`) and you've got a product.
 
-```bash
-git init && git add . && git commit -m "initial commit"
-gh repo create my-ai-chat --public --push
-```
+There's one wrinkle. The deployed AgentCore endpoint requires AWS SigV4-signed requests — a browser can't call it directly, and you must **never** sign from client-side JS (that ships your AWS credentials in page source). The repo includes a small streaming Lambda proxy behind CloudFront that signs on the browser's behalf. Deploy it, point the frontend's endpoint at the CloudFront URL, and the hosted duck talks to the deployed agent.
 
-Enable GitHub Pages in your repo settings (Settings > Pages > Source: deploy from branch `main`, folder `/ (root)`). Or do it from the CLI:
-
-```bash
-gh api repos/YOUR_USERNAME/my-ai-chat/pages -X POST -f source.branch=main -f source.path=/
-```
-
-Your app is live at:
-
-```
-https://YOUR_USERNAME.github.io/my-ai-chat
-```
-
-HTTPS, free, auto-deploys on push. No AWS service needed for the frontend.
-
-> **Heads up:** The deployed AgentCore endpoint requires AWS-signed (SigV4) requests, so a browser can't call it directly — that's why the frontend calls `localhost:8080` and needs `agentcore dev` running. The repo also includes the fix: a small streaming Lambda proxy behind CloudFront (`proxy/`) that signs requests to the runtime, so the hosted frontend talks to the production agent. Post 2 walks through building it — including the CloudFront OAC wrinkles (the `x-amz-content-sha256` header, the double invoke permission) that cost me an afternoon.
+The CloudFront-over-Lambda setup has two gotchas that cost me an afternoon: POST bodies need an `x-amz-content-sha256` header, and CloudFront needs *both* `lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` permissions. The repo's `DEPLOYMENT.md` walks through both so you don't repeat them.
 
 ---
 
-## The honest gotchas list
+## Watch the bill
 
-These cost me time so they don't cost you:
-
-1. **"Access denied" from Bedrock.** Your IAM identity needs `bedrock:InvokeModel` permission. Personal accounts with admin access are fine. Org accounts with locked-down roles need policy updates.
-
-2. **First `agentcore deploy` takes 3-5 minutes.** CDK bootstraps your account on the first run. Subsequent deploys are faster.
-
-3. **The response is a stream, not JSON.** The agent server speaks Server-Sent Events and *requires* an `Accept: text/event-stream` header. If your frontend does `res.json()` expecting `{result: "..."}`, you'll get an error object instead. Read the stream (see Step 6).
-
-4. **The deployed endpoint isn't browser-callable.** It requires SigV4-signed requests. Don't try to sign from client-side JS — you'd be shipping AWS credentials in page source. Put a proxy in front (Post 2).
-
-5. **TypeScript compilation errors.** Make sure `"type": "module"` is set in package.json and your tsconfig is correct. Run `npm run build` locally to catch errors before deploying.
-
-6. **Cold starts.** The runtime scales down when idle. First request after inactivity takes extra seconds.
-
-
----
-
-## Where to take it next
-
-Right now this is a starting point. It works locally, it's deployed, it's cheap. But the conversation resets every message, there's no auth, and the deployed endpoint isn't browser-accessible yet.
-
-The next posts in this series fix that:
-
-- **Post 2: Add memory + a public endpoint** — AgentCore Memory for conversation persistence. A streaming Lambda proxy behind CloudFront for a browser-callable URL.
-- **Post 3: Add authentication** — Cognito so each user gets their own sessions.
-- **Post 4: Chat with your documents** — RAG with Bedrock Knowledge Bases.
-- **Post 5: Add guardrails** — Content filtering, PII redaction, topic blocking.
-- **Post 6: Give it tools** — Web search, code execution, API calls.
-- **Post 7: Go to production** — Custom domain, CI/CD, monitoring, cost controls.
-
-Each post builds on this one. Same agent at the core, progressively more capable.
+The endpoint is public and unauthenticated — anyone with the URL can spend your Bedrock tokens. Haiku 4.5 is cheap (fractions of a cent per roast), but set a **reserved-concurrency cap on the Lambda** (I use 2) and an AWS budget alarm so a viral moment doesn't become a surprise invoice.
 
 ---
 
@@ -335,19 +240,19 @@ Each post builds on this one. Same agent at the core, progressively more capable
 
 | Layer | What | How |
 |-------|------|-----|
-| Model | Amazon Nova Micro (swappable) | Amazon Bedrock |
-| Agent | ~40 lines of TypeScript | Strands Agents SDK + AgentCore app server |
+| Personality | A system prompt | The whole product, really |
+| Model | Claude Haiku 4.5 | Amazon Bedrock |
+| Agent | ~30 lines of TypeScript | Strands Agents SDK + AgentCore |
 | Backend hosting | `agentcore deploy` | AgentCore Runtime |
+| Public endpoint | Streaming Lambda + CloudFront | Signs requests for the browser |
 | Frontend hosting | Push to GitHub | GitHub Pages |
 
-All deployed from your terminal. Zero console visits.
+The lesson underneath the jokes: a capable model plus a sharp system prompt is a shippable product. Change the prompt and Chef Duck becomes a patient mentor, a passive-aggressive senior dev, or a security auditor. Same 30 minutes, same stack.
 
 ---
 
 ## Source
 
-[The complete code for this tutorial is on GitHub →](https://github.com/tmoreton/tutorials)
+[The complete code is on GitHub →](https://github.com/tmoreton/tutorials)
 
----
-
-*If this was useful, follow along. The next post drops next week.*
+Go roast some code. Your duck is disappointed in you already.
