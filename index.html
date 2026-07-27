@@ -193,7 +193,12 @@
     <div id="footer">Powered by Strands Agents &middot; Amazon Bedrock</div>
 
     <script>
-        const API_URL = "http://localhost:8080/invocations";
+        // Local dev: agentcore dev server. Production: CloudFront → Lambda proxy → AgentCore Runtime.
+        const LOCAL_API = "http://localhost:8080/invocations";
+        const PROD_API = "https://d1tot2sdhkxrue.cloudfront.net/";
+        const API_URL = location.hostname === "localhost" || location.hostname === "127.0.0.1"
+            ? LOCAL_API
+            : PROD_API;
 
         const chatEl = document.getElementById("chat");
         const inputEl = document.getElementById("input");
@@ -213,6 +218,15 @@
 
         // A stable session id so the agent keeps conversation history per browser tab.
         const sessionId = "web-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+        // CloudFront OAC signs requests to the Lambda function URL. For POST bodies
+        // the payload hash must be sent in x-amz-content-sha256, or the signature
+        // won't match — Lambda function URLs don't accept unsigned payloads.
+        async function sha256Hex(str) {
+            const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+            return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+        }
 
         async function send() {
             const text = inputEl.value.trim();
@@ -227,14 +241,18 @@
             const bubble = row.querySelector(".message-bubble");
 
             try {
+                const body = JSON.stringify({ prompt: text });
+                const headers = {
+                    "Content-Type": "application/json",
+                    "Accept": "text/event-stream",
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": sessionId,
+                };
+                if (!isLocal) headers["x-amz-content-sha256"] = await sha256Hex(body);
+
                 const res = await fetch(API_URL, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "text/event-stream",
-                        "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": sessionId,
-                    },
-                    body: JSON.stringify({ prompt: text }),
+                    headers,
+                    body,
                 });
                 if (!res.ok) throw new Error("HTTP " + res.status);
 
