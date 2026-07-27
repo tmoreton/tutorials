@@ -8,15 +8,15 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%86%3C/text%3E%3C/svg%3E">
     <style>
         :root {
-            --bg: #fffdf5;
-            --bg-secondary: #fff8e1;
-            --text: #1a1a1a;
-            --text-secondary: #6b6b5e;
-            --border: #ece5c9;
-            --accent: #f5b301;
-            --accent-ink: #1a1a1a;
-            --user-bg: #1a1a1a;
-            --user-text: #ffe9a8;
+            --bg: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text: #111111;
+            --text-secondary: #666666;
+            --border: #e5e5e5;
+            --accent: #111111;
+            --accent-ink: #ffffff;
+            --user-bg: #111111;
+            --user-text: #ffffff;
             --code-bg: #1e1e1e;
             --code-text: #f5f5f5;
             --radius: 0.9rem;
@@ -41,7 +41,14 @@
             align-items: center;
             gap: 0.6rem;
         }
-        header .duck { font-size: 1.5rem; line-height: 1; }
+        header .duck {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.5rem;
+            line-height: 1.05;
+            white-space: pre;
+            color: var(--text);
+            margin: 0;
+        }
         header h1 {
             font-size: 1.15rem;
             font-weight: 700;
@@ -59,7 +66,7 @@
             color: var(--text-secondary);
             transition: color 0.15s;
         }
-        #repo-link:hover { color: var(--accent-ink); }
+        #repo-link:hover { color: var(--text); }
 
         #chat {
             flex: 1;
@@ -73,7 +80,15 @@
             text-align: center;
             color: var(--text-secondary);
         }
-        #empty .big { font-size: 3.5rem; }
+        #empty .big {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 1rem;
+            line-height: 1.15;
+            white-space: pre;
+            color: var(--text);
+            display: inline-block;
+            text-align: left;
+        }
         #empty h2 {
             color: var(--text);
             font-size: 1.4rem;
@@ -130,7 +145,7 @@
         /* Rendered markdown inside a roast */
         .message-bubble p { margin: 0 0 0.6rem; }
         .message-bubble p:last-child { margin-bottom: 0; }
-        .message-bubble strong { color: #b45309; }
+        .message-bubble strong { color: var(--text); }
         .message-bubble pre {
             background: var(--code-bg);
             color: var(--code-text);
@@ -176,7 +191,7 @@
             color: var(--text-secondary);
             transition: border-color 0.15s, color 0.15s;
         }
-        .chip:hover { border-color: var(--accent); color: var(--accent-ink); }
+        .chip:hover { border-color: var(--accent); color: var(--text); }
 
         #input-container {
             max-width: var(--max-width);
@@ -192,7 +207,7 @@
         }
         #input-container:focus-within {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(245, 179, 1, 0.2);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
         }
 
         #input {
@@ -256,7 +271,10 @@
 </head>
 <body>
     <header>
-        <span class="duck">🦆</span>
+        <span class="duck" aria-hidden="true">    _
+ __(.)&lt;
+ \___)
+~~~~~~~~</span>
         <h1>Roast My Code</h1>
         <span class="tagline">the rubber duck that's disappointed in you</span>
         <a id="repo-link" href="https://github.com/tmoreton/tutorials" target="_blank" rel="noopener" aria-label="View source on GitHub" title="View source on GitHub">
@@ -268,7 +286,10 @@
 
     <div id="chat">
         <div id="empty">
-            <div class="big">🦆</div>
+            <div class="big" aria-hidden="true">        _
+     __(.)&lt; quack
+     \___)
+~~~~~~~~~~~~~~~~</div>
             <h2>Paste your code. Get roasted.</h2>
             <p>Chef Duck reviews your code like Gordon Ramsay runs a kitchen — theatrical, savage, and (annoyingly) correct. Every roast hides real feedback. Paste a snippet and brace yourself.</p>
         </div>
