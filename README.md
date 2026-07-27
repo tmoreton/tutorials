@@ -2,6 +2,10 @@
 
 A minimal ChatGPT-style chat interface powered by the Strands Agents SDK and Amazon Bedrock AgentCore.
 
+**🔗 Live demo: [tmoreton.github.io/tutorials](https://tmoreton.github.io/tutorials/)**
+
+[![Relay — the live chat interface](assets/screenshot.png)](https://tmoreton.github.io/tutorials/)
+
 ## Architecture
 
 ```
@@ -36,22 +40,28 @@ open index.html
 # Deploy the agent to AWS
 agentcore deploy
 
-# Deploy the frontend to GitHub Pages
-git init && git add . && git commit -m "initial commit"
-gh repo create chatgpt-clone-aws --public --push
-# Enable GitHub Pages: Settings > Pages > Source: main branch, / (root)
+# Push to GitHub and enable Pages: Settings > Pages > Source: main branch, / (root)
+git add . && git commit -m "initial commit" && git push
 ```
+
+The deployed AgentCore endpoint requires SigV4-signed requests, so the browser
+can't call it directly. The `proxy/` folder holds a streaming Lambda (behind
+CloudFront) that signs on the browser's behalf — see [DEPLOYMENT.md](DEPLOYMENT.md)
+for the full setup and the gotchas involved.
 
 ## Project Structure
 
 ```
-chatgpt-clone-aws/
-├── app/
-│   └── MyAgent/
-│       ├── main.ts           # Agent code (~10 lines)
-│       ├── package.json
-│       └── tsconfig.json
+tutorials/
+├── app/MyAgent/
+│   ├── main.ts               # Agent code (streaming Strands + AgentCore app)
+│   ├── model/load.ts         # Which Bedrock model (Nova Micro)
+│   ├── package.json
+│   └── tsconfig.json
 ├── index.html                # Chat UI (ChatGPT-style)
+├── proxy/                     # Lambda proxy for the public endpoint
+├── starter/                  # Minimal, self-contained version for the video tutorial
+├── DEPLOYMENT.md             # How the public deployment actually works
 ├── blog-post.md              # The accompanying tutorial
 └── README.md
 ```
