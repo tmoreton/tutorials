@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relay</title>
+    <title>Roast My Code 🦆 — the rubber duck that's disappointed in you</title>
+    <meta name="description" content="Paste your code. A foul-mouthed rubber duck roasts you Gordon Ramsay-style — and actually finds the bug.">
     <style>
         :root {
-            --bg: #ffffff;
-            --bg-secondary: #f5f5f5;
-            --text: #111111;
-            --text-secondary: #666666;
-            --border: #e5e5e5;
-            --accent: #111111;
-            --user-bg: #111111;
-            --user-text: #ffffff;
-            --radius: 1rem;
-            --max-width: 720px;
+            --bg: #fffdf5;
+            --bg-secondary: #fff8e1;
+            --text: #1a1a1a;
+            --text-secondary: #6b6b5e;
+            --border: #ece5c9;
+            --accent: #f5b301;
+            --accent-ink: #1a1a1a;
+            --user-bg: #1a1a1a;
+            --user-text: #ffe9a8;
+            --code-bg: #1e1e1e;
+            --code-text: #f5f5f5;
+            --radius: 0.9rem;
+            --max-width: 760px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -34,13 +38,18 @@
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
-        header .brand-icon { color: var(--accent); }
+        header .duck { font-size: 1.5rem; line-height: 1; }
         header h1 {
-            font-size: 1.125rem;
-            font-weight: 600;
+            font-size: 1.15rem;
+            font-weight: 700;
             letter-spacing: -0.01em;
+        }
+        header .tagline {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-left: 0.15rem;
         }
         #repo-link {
             margin-left: auto;
@@ -49,7 +58,7 @@
             color: var(--text-secondary);
             transition: color 0.15s;
         }
-        #repo-link:hover { color: var(--accent); }
+        #repo-link:hover { color: var(--accent-ink); }
 
         #chat {
             flex: 1;
@@ -57,14 +66,19 @@
             padding: 2rem 1rem;
         }
 
-        #chat:empty::before {
-            content: "Ask Relay anything.";
-            display: block;
+        #empty {
+            max-width: 460px;
+            margin: 12vh auto 0;
             text-align: center;
             color: var(--text-secondary);
-            font-size: 1.25rem;
-            margin-top: 30vh;
         }
+        #empty .big { font-size: 3.5rem; }
+        #empty h2 {
+            color: var(--text);
+            font-size: 1.4rem;
+            margin: 0.75rem 0 0.4rem;
+        }
+        #empty p { font-size: 0.95rem; line-height: 1.55; }
 
         .message-row {
             max-width: var(--max-width);
@@ -73,13 +87,20 @@
             flex-direction: column;
             gap: 0.25rem;
         }
+        .message-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            padding: 0 0.5rem;
+        }
 
         .message-bubble {
-            padding: 0.875rem 1rem;
+            padding: 0.9rem 1.05rem;
             border-radius: var(--radius);
             line-height: 1.6;
-            font-size: 0.9375rem;
-            white-space: pre-wrap;
+            font-size: 0.95rem;
             word-wrap: break-word;
         }
 
@@ -88,41 +109,89 @@
             color: var(--user-text);
             border-bottom-right-radius: 0.25rem;
             align-self: flex-end;
-            max-width: 85%;
+            max-width: 88%;
             margin-left: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
         }
+        .message-row.user .message-label { align-self: flex-end; }
 
         .message-row.assistant .message-bubble {
             background: var(--bg-secondary);
             color: var(--text);
             border: 1px solid var(--border);
             border-bottom-left-radius: 0.25rem;
-            max-width: 85%;
+            max-width: 88%;
+        }
+        .message-bubble.thinking { color: var(--text-secondary); font-style: italic; }
+
+        /* Rendered markdown inside a roast */
+        .message-bubble p { margin: 0 0 0.6rem; }
+        .message-bubble p:last-child { margin-bottom: 0; }
+        .message-bubble strong { color: #b45309; }
+        .message-bubble pre {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 0.85rem 1rem;
+            border-radius: 0.6rem;
+            overflow-x: auto;
+            margin: 0.6rem 0;
+        }
+        .message-bubble pre code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            background: none;
+            padding: 0;
+        }
+        .message-bubble code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.85em;
+            background: rgba(0,0,0,0.06);
+            padding: 0.1em 0.35em;
+            border-radius: 0.3em;
         }
 
-        .thinking { color: var(--text-secondary); font-style: italic; }
-
         #input-area {
-            padding: 1rem 1.5rem 1.5rem;
+            padding: 0.85rem 1.5rem 1.25rem;
             border-top: 1px solid var(--border);
             background: var(--bg);
         }
+        #examples {
+            max-width: var(--max-width);
+            margin: 0 auto 0.6rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .chip {
+            font-size: 0.78rem;
+            padding: 0.3rem 0.7rem;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .chip:hover { border-color: var(--accent); color: var(--accent-ink); }
 
         #input-container {
             max-width: var(--max-width);
             margin: 0 auto;
             display: flex;
             align-items: flex-end;
-            gap: 0.5rem;
-            background: var(--bg);
+            gap: 0.6rem;
+            background: #fff;
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 0.625rem 0.75rem;
+            padding: 0.7rem 0.75rem;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
         #input-container:focus-within {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 0 0 3px rgba(245, 179, 1, 0.2);
         }
 
         #input {
@@ -131,33 +200,33 @@
             border: none;
             outline: none;
             color: var(--text);
-            font-size: 0.9375rem;
+            font-size: 0.88rem;
             padding: 0.375rem 0.25rem;
-            font-family: inherit;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
             resize: none;
-            max-height: 150px;
+            max-height: 220px;
+            min-height: 1.5rem;
             overflow-y: auto;
-            line-height: 1.5;
+            line-height: 1.55;
         }
-        #input::placeholder { color: var(--text-secondary); }
+        #input::placeholder { color: var(--text-secondary); font-family: -apple-system, sans-serif; }
 
         #send-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
             border: none;
             background: var(--accent);
-            color: white;
+            color: var(--accent-ink);
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 0.6rem 1rem;
+            border-radius: 0.7rem;
             flex-shrink: 0;
+            white-space: nowrap;
             transition: opacity 0.15s, transform 0.15s;
         }
-        #send-btn:disabled { opacity: 0.25; cursor: not-allowed; }
-        #send-btn:hover:not(:disabled) { opacity: 0.8; }
-        #send-btn:active:not(:disabled) { transform: scale(0.95); }
+        #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        #send-btn:hover:not(:disabled) { opacity: 0.85; }
+        #send-btn:active:not(:disabled) { transform: scale(0.96); }
 
         #footer {
             display: flex;
@@ -165,15 +234,11 @@
             justify-content: center;
             gap: 0.5rem;
             padding: 0.5rem;
-            font-size: 0.6875rem;
+            font-size: 0.68rem;
             color: var(--text-secondary);
         }
         #footer .powered { opacity: 0.7; }
-        #footer .logos {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
+        #footer .logos { display: inline-flex; align-items: center; gap: 0.4rem; }
         #footer .logos img { height: 14px; width: auto; display: block; }
         #footer .dot { opacity: 0.4; }
 
@@ -183,16 +248,16 @@
 
         @media (max-width: 640px) {
             header { padding: 0.75rem 1rem; }
+            header .tagline { display: none; }
             #input-area { padding: 0.75rem 1rem 1rem; }
         }
     </style>
 </head>
 <body>
     <header>
-        <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
-        </svg>
-        <h1>Relay</h1>
+        <span class="duck">🦆</span>
+        <h1>Roast My Code</h1>
+        <span class="tagline">the rubber duck that's disappointed in you</span>
         <a id="repo-link" href="https://github.com/tmoreton/tutorials" target="_blank" rel="noopener" aria-label="View source on GitHub" title="View source on GitHub">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.04-.02-2.04-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.82 1.1.82 2.22 0 1.6-.02 2.89-.02 3.28 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/>
@@ -200,17 +265,19 @@
         </a>
     </header>
 
-    <div id="chat"></div>
+    <div id="chat">
+        <div id="empty">
+            <div class="big">🦆</div>
+            <h2>Paste your code. Get roasted.</h2>
+            <p>Chef Duck reviews your code like Gordon Ramsay runs a kitchen — theatrical, savage, and (annoyingly) correct. Every roast hides real feedback. Paste a snippet and brace yourself.</p>
+        </div>
+    </div>
 
     <div id="input-area">
+        <div id="examples"></div>
         <div id="input-container">
-            <textarea id="input" rows="1" placeholder="Message Relay..."></textarea>
-            <button id="send-btn" onclick="send()" aria-label="Send">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-            </button>
+            <textarea id="input" rows="2" placeholder="Paste your code here… (or describe your bug). Shift+Enter for a new line."></textarea>
+            <button id="send-btn" onclick="send()">🔥 Roast it</button>
         </div>
     </div>
 
@@ -231,17 +298,37 @@
         // Local dev: agentcore dev server. Production: CloudFront → Lambda proxy → AgentCore Runtime.
         const LOCAL_API = "http://localhost:8080/invocations";
         const PROD_API = "https://d1tot2sdhkxrue.cloudfront.net/";
-        const API_URL = location.hostname === "localhost" || location.hostname === "127.0.0.1"
-            ? LOCAL_API
-            : PROD_API;
+        const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+        const API_URL = isLocal ? LOCAL_API : PROD_API;
 
         const chatEl = document.getElementById("chat");
+        const emptyEl = document.getElementById("empty");
         const inputEl = document.getElementById("input");
         const sendBtn = document.getElementById("send-btn");
+        const examplesEl = document.getElementById("examples");
+
+        // One-click snippets so people can taste a roast without typing.
+        const EXAMPLES = [
+            { label: "🐛 Off-by-one", code: "function last(arr) {\n  return arr[arr.length];\n}" },
+            { label: "🕳️ Callback pyramid", code: "getUser(id, u => {\n  getOrders(u, o => {\n    getItems(o, i => {\n      render(i);\n    });\n  });\n});" },
+            { label: "☠️ == vs ===", code: "if (userInput == 0) {\n  deleteEverything();\n}" },
+            { label: "😬 Empty catch", code: "try {\n  chargeCard(amount);\n} catch (e) {}" },
+        ];
+        EXAMPLES.forEach((ex) => {
+            const chip = document.createElement("button");
+            chip.className = "chip";
+            chip.textContent = ex.label;
+            chip.onclick = () => {
+                inputEl.value = ex.code;
+                inputEl.dispatchEvent(new Event("input"));
+                inputEl.focus();
+            };
+            examplesEl.appendChild(chip);
+        });
 
         inputEl.addEventListener("input", () => {
             inputEl.style.height = "auto";
-            inputEl.style.height = Math.min(inputEl.scrollHeight, 150) + "px";
+            inputEl.style.height = Math.min(inputEl.scrollHeight, 220) + "px";
         });
 
         inputEl.addEventListener("keydown", (e) => {
@@ -251,9 +338,8 @@
             }
         });
 
-        // A stable session id so the agent keeps conversation history per browser tab.
+        // A stable session id so the duck remembers the conversation per browser tab.
         const sessionId = "web-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-        const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
         // CloudFront OAC signs requests to the Lambda function URL. For POST bodies
         // the payload hash must be sent in x-amz-content-sha256, or the signature
@@ -267,12 +353,13 @@
             const text = inputEl.value.trim();
             if (!text) return;
 
+            if (emptyEl) emptyEl.remove();
             appendMessage("user", text);
             inputEl.value = "";
             inputEl.style.height = "auto";
             sendBtn.disabled = true;
 
-            const row = appendMessage("assistant", "Thinking...", "thinking");
+            const row = appendMessage("assistant", "Chef Duck is sharpening the knives…", "thinking");
             const bubble = row.querySelector(".message-bubble");
 
             try {
@@ -284,15 +371,11 @@
                 };
                 if (!isLocal) headers["x-amz-content-sha256"] = await sha256Hex(body);
 
-                const res = await fetch(API_URL, {
-                    method: "POST",
-                    headers,
-                    body,
-                });
+                const res = await fetch(API_URL, { method: "POST", headers, body });
                 if (!res.ok) throw new Error("HTTP " + res.status);
 
                 // The agent streams Server-Sent Events: each `data:` line carries
-                // a JSON chunk like {"data":"token"}. Concatenate as they arrive.
+                // a JSON chunk (a bare JSON-encoded token string). Concatenate them.
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = "";
@@ -323,17 +406,19 @@
                             bubble.classList.remove("thinking");
                             firstChunk = false;
                         }
-                        bubble.textContent = answer;
+                        bubble.innerHTML = renderMarkdown(answer);
                         chatEl.scrollTop = chatEl.scrollHeight;
                     }
                 }
 
                 if (!answer) {
-                    bubble.textContent = "(no response)";
+                    bubble.textContent = "(the duck is speechless — try again)";
                     bubble.classList.remove("thinking");
                 }
             } catch (err) {
-                bubble.textContent = "Something went wrong. Make sure agentcore dev is running.";
+                bubble.textContent = isLocal
+                    ? "The duck is asleep. Make sure `agentcore dev` is running."
+                    : "The duck choked on that one. Try again in a moment.";
                 bubble.classList.remove("thinking");
             }
 
@@ -345,6 +430,11 @@
             const row = document.createElement("div");
             row.className = `message-row ${role}`;
 
+            const label = document.createElement("div");
+            label.className = "message-label";
+            label.textContent = role === "user" ? "You" : "🦆 Chef Duck";
+            row.appendChild(label);
+
             const bubble = document.createElement("div");
             bubble.className = `message-bubble ${className}`;
             bubble.textContent = text;
@@ -353,6 +443,32 @@
             chatEl.appendChild(row);
             chatEl.scrollTop = chatEl.scrollHeight;
             return row;
+        }
+
+        // Minimal, safe markdown: escape everything first, then re-introduce
+        // code fences, inline code, bold, and paragraphs. No raw HTML survives.
+        function escapeHtml(s) {
+            return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+        function renderMarkdown(src) {
+            const blocks = [];
+            // Pull out ```fenced``` code first so its contents aren't further formatted.
+            let text = src.replace(/```[a-zA-Z]*\n?([\s\S]*?)```/g, (_, code) => {
+                blocks.push(code.replace(/\n$/, ""));
+                return ` BLOCK${blocks.length - 1} `;
+            });
+            text = escapeHtml(text);
+            text = text.replace(/`([^`\n]+)`/g, (_, c) => `<code>${c}</code>`);
+            text = text.replace(/\*\*([^*]+)\*\*/g, (_, b) => `<strong>${b}</strong>`);
+            // Paragraphs on blank lines, <br> on single newlines.
+            text = text
+                .split(/\n{2,}/)
+                .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
+                .join("");
+            // Restore code blocks.
+            text = text.replace(/ BLOCK(\d+) /g, (_, i) =>
+                `<pre><code>${escapeHtml(blocks[+i])}</code></pre>`);
+            return text;
         }
 
         inputEl.focus();
