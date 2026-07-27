@@ -4,7 +4,7 @@ A minimal ChatGPT-style chat interface powered by the Strands Agents SDK and Ama
 
 **🔗 Live demo: [tmoreton.github.io/tutorials](https://tmoreton.github.io/tutorials/)**
 
-[![Relay — the live chat interface](assets/screenshot.png)](https://tmoreton.github.io/tutorials/)
+[![Roast My Code — the rubber duck that's disappointed in you](assets/screenshot.png)](https://tmoreton.github.io/tutorials/)
 
 ## Architecture
 
