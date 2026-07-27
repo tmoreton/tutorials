@@ -6,13 +6,13 @@
     .tag { font-family:-apple-system,'Segoe UI',sans-serif; fill:#8a8a8a; }
   </style>
 
-  <g font-size="42">
-    <text class="mono" x="130" y="196" xml:space="preserve">    _</text>
-    <text class="mono" x="130" y="238" xml:space="preserve"> __(.)&lt; this compiles? on what planet?</text>
-    <text class="mono" x="130" y="280" xml:space="preserve"> \___)</text>
-    <text class="mono" x="130" y="322" xml:space="preserve">~~~~~~~~</text>
+  <g font-size="46">
+    <text class="mono" x="150" y="180" xml:space="preserve">    _</text>
+    <text class="mono" x="150" y="226" xml:space="preserve"> __(.)&lt; this compiles?</text>
+    <text class="mono" x="150" y="272" xml:space="preserve"> \___)  on what planet?</text>
+    <text class="mono" x="150" y="318" xml:space="preserve">~~~~~~~~</text>
   </g>
 
-  <text class="brand" x="130" y="470" font-size="72">Unducked</text>
-  <text class="tag" x="133" y="518" font-size="29">rubber-duck debugging, but the duck talks back</text>
+  <text class="brand" x="150" y="470" font-size="72">Unducked</text>
+  <text class="tag" x="153" y="518" font-size="29">rubber-duck debugging, but the duck talks back</text>
 </svg>
