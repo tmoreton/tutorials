@@ -2,9 +2,9 @@
 
 A minimal ChatGPT-style chat interface powered by the Strands Agents SDK and Amazon Bedrock AgentCore.
 
-**🔗 Live demo: [tmoreton.github.io/tutorials](https://tmoreton.github.io/tutorials/)**
+**🔗 Live demo: [unducked.com](https://unducked.com/)**
 
-[![Unducked — the rubber duck that reviews your code](assets/screenshot.png)](https://tmoreton.github.io/tutorials/)
+[![Unducked — the rubber duck that reviews your code](assets/screenshot.png)](https://unducked.com/)
 
 ## Architecture
 

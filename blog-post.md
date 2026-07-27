@@ -222,7 +222,7 @@ open tutorials/index.html
 
 ## Step 7: Put it on the internet
 
-Push to GitHub, then **Settings → Pages → Deploy from branch `main`, folder `/`**. A minute later your duck is live at `https://YOUR_USERNAME.github.io/tutorials` — HTTPS, free, auto-deploying on every push. Point a custom domain at it (say, `unducked.com`) and you've got a product.
+Push to GitHub, then **Settings → Pages → Deploy from branch `main`, folder `/`**. A minute later your duck is live at `https://unducked.com` — HTTPS, free, auto-deploying on every push. Point a custom domain at it (say, `unducked.com`) and you've got a product.
 
 There's one wrinkle. The deployed AgentCore endpoint requires AWS SigV4-signed requests — a browser can't call it directly, and you must **never** sign from client-side JS (that ships your AWS credentials in page source). The repo includes a small streaming Lambda proxy behind CloudFront that signs on the browser's behalf. Deploy it, point the frontend's endpoint at the CloudFront URL, and the hosted duck talks to the deployed agent.
 

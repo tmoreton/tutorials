@@ -27,7 +27,7 @@ Local dev keeps the simple path: the frontend detects `localhost` and calls `age
 | CloudFront distribution | `E1QLW6Q26MYNBG` → `d1tot2sdhkxrue.cloudfront.net` |
 | Origin Access Control | `E248PSODOIURJF` |
 | CORS response-headers policy | `a4035c31-c33d-4af6-9fcd-0c286b94104c` |
-| Frontend | GitHub Pages, `main` / root → `https://tmoreton.github.io/tutorials/` |
+| Frontend | GitHub Pages, `main` / root → `https://unducked.com/` |
 
 ## The problems we hit, and the fixes
 
