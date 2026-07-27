@@ -3,16 +3,14 @@
   <style>
     .mono { font-family:'Menlo','SFMono-Regular','Consolas',monospace; fill:#ffffff; white-space:pre; }
     .brand { font-family:'Menlo',monospace; font-weight:700; fill:#ffffff; }
-    .tag { font-family:-apple-system,'Segoe UI',sans-serif; fill:#8a8a8a; }
   </style>
 
-  <g font-size="46">
-    <text class="mono" x="150" y="180" xml:space="preserve">    _</text>
-    <text class="mono" x="150" y="226" xml:space="preserve"> __(.)&lt; this compiles?</text>
-    <text class="mono" x="150" y="272" xml:space="preserve"> \___)  on what planet?</text>
-    <text class="mono" x="150" y="318" xml:space="preserve">~~~~~~~~</text>
+  <g font-size="48">
+    <text class="mono" x="150" y="212" xml:space="preserve">    _</text>
+    <text class="mono" x="150" y="260" xml:space="preserve"> __(.)&lt; this compiles?</text>
+    <text class="mono" x="150" y="308" xml:space="preserve"> \___)  on what planet?</text>
+    <text class="mono" x="150" y="356" xml:space="preserve">~~~~~~~~</text>
   </g>
 
-  <text class="brand" x="150" y="470" font-size="72">Unducked</text>
-  <text class="tag" x="153" y="518" font-size="29">rubber-duck debugging, but the duck talks back</text>
+  <text class="brand" x="150" y="472" font-size="72">Unducked</text>
 </svg>
