@@ -7,13 +7,12 @@
     <style>
         :root {
             --bg: #ffffff;
-            --bg-secondary: #f9fafb;
-            --text: #111827;
-            --text-secondary: #6b7280;
-            --border: #e5e7eb;
-            --accent: #2563eb;
-            --accent-light: #eff6ff;
-            --user-bg: #2563eb;
+            --bg-secondary: #f5f5f5;
+            --text: #111111;
+            --text-secondary: #666666;
+            --border: #e5e5e5;
+            --accent: #111111;
+            --user-bg: #111111;
             --user-text: #ffffff;
             --radius: 1rem;
             --max-width: 720px;
@@ -67,15 +66,6 @@
             gap: 0.25rem;
         }
 
-        .message-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            padding-left: 1rem;
-        }
-
         .message-bubble {
             padding: 0.875rem 1rem;
             border-radius: var(--radius);
@@ -116,7 +106,7 @@
             display: flex;
             align-items: flex-end;
             gap: 0.5rem;
-            background: var(--bg-secondary);
+            background: var(--bg);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 0.625rem 0.75rem;
@@ -124,7 +114,7 @@
         }
         #input-container:focus-within {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
         }
 
         #input {
@@ -157,8 +147,8 @@
             flex-shrink: 0;
             transition: opacity 0.15s, transform 0.15s;
         }
-        #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-        #send-btn:hover:not(:disabled) { transform: scale(1.05); }
+        #send-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+        #send-btn:hover:not(:disabled) { opacity: 0.8; }
         #send-btn:active:not(:disabled) { transform: scale(0.95); }
 
         #footer {
@@ -180,7 +170,7 @@
 </head>
 <body>
     <header>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
         </svg>
         <h1>Relay</h1>
@@ -203,21 +193,17 @@
     <div id="footer">Powered by Strands Agents &middot; Amazon Bedrock</div>
 
     <script>
-        // ── Configuration ──────────────────────────────────────────
         const API_URL = "http://localhost:8080/invocations";
 
-        // ── Elements ───────────────────────────────────────────────
         const chatEl = document.getElementById("chat");
         const inputEl = document.getElementById("input");
         const sendBtn = document.getElementById("send-btn");
 
-        // Auto-resize textarea
         inputEl.addEventListener("input", () => {
             inputEl.style.height = "auto";
             inputEl.style.height = Math.min(inputEl.scrollHeight, 150) + "px";
         });
 
-        // Enter to send, Shift+Enter for newline
         inputEl.addEventListener("keydown", (e) => {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -225,7 +211,9 @@
             }
         });
 
-        // ── Send message ───────────────────────────────────────────
+        // A stable session id so the agent keeps conversation history per browser tab.
+        const sessionId = "web-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+
         async function send() {
             const text = inputEl.value.trim();
             if (!text) return;
@@ -241,12 +229,56 @@
             try {
                 const res = await fetch(API_URL, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "text/event-stream",
+                        "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": sessionId,
+                    },
                     body: JSON.stringify({ prompt: text }),
                 });
-                const data = await res.json();
-                bubble.textContent = data.result;
-                bubble.classList.remove("thinking");
+                if (!res.ok) throw new Error("HTTP " + res.status);
+
+                // The agent streams Server-Sent Events: each `data:` line carries
+                // a JSON chunk like {"data":"token"}. Concatenate as they arrive.
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                let answer = "";
+                let firstChunk = true;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+
+                    const events = buffer.split("\n\n");
+                    buffer = events.pop();  // keep any partial event for the next read
+
+                    for (const evt of events) {
+                        const line = evt.split("\n").find((l) => l.startsWith("data:"));
+                        if (!line) continue;
+                        const raw = line.slice(5).trim();
+                        if (!raw || raw === "[DONE]") continue;
+                        let piece = raw;
+                        try {
+                            const parsed = JSON.parse(raw);
+                            piece = typeof parsed === "string" ? parsed : (parsed.data ?? parsed.result ?? "");
+                        } catch { /* plain-text chunk */ }
+                        if (!piece) continue;
+                        answer += piece;
+                        if (firstChunk) {
+                            bubble.classList.remove("thinking");
+                            firstChunk = false;
+                        }
+                        bubble.textContent = answer;
+                        chatEl.scrollTop = chatEl.scrollHeight;
+                    }
+                }
+
+                if (!answer) {
+                    bubble.textContent = "(no response)";
+                    bubble.classList.remove("thinking");
+                }
             } catch (err) {
                 bubble.textContent = "Something went wrong. Make sure agentcore dev is running.";
                 bubble.classList.remove("thinking");
@@ -256,7 +288,6 @@
             inputEl.focus();
         }
 
-        // ── Render message ─────────────────────────────────────────
         function appendMessage(role, text, className = "") {
             const row = document.createElement("div");
             row.className = `message-row ${role}`;
@@ -271,7 +302,6 @@
             return row;
         }
 
-        // Focus input on load
         inputEl.focus();
     </script>
 </body>
