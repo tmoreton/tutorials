@@ -1,4 +1,4 @@
-# 🦆 Unducked
+<h1><img src="assets/favicon.svg" alt="" width="32" height="32" align="top"> Unducked</h1>
 
 Rubber-duck debugging, but the duck talks back. Paste your code and a foul-mouthed rubber duck reviews it like Gordon Ramsay reviews a risotto — it roasts you, then finds the actual bug and hands you the fix.
 
