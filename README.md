@@ -2,8 +2,6 @@
   <img src="assets/favicon.svg" alt="Unducked" width="120" height="120">
 </p>
 
-<h1 align="center">Unducked</h1>
-
 <p align="center">
   <a href="https://unducked.com/">unducked.com</a>
 </p>
