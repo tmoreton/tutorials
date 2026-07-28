@@ -1,10 +1,12 @@
-<h1><img src="assets/favicon.svg" alt="" width="32" height="32" align="top"> Unducked</h1>
+<p align="center">
+  <img src="assets/favicon.svg" alt="Unducked" width="120" height="120">
+</p>
 
-Rubber-duck debugging, but the duck talks back. Paste your code and a foul-mouthed rubber duck reviews it like Gordon Ramsay reviews a risotto — it roasts you, then finds the actual bug and hands you the fix.
+<h1 align="center">Unducked</h1>
 
-**🔗 Live: [unducked.com](https://unducked.com/)**
-
-[![Unducked — the rubber duck that reviews your code](assets/hero.png)](https://unducked.com/)
+<p align="center">
+  <a href="https://unducked.com/">unducked.com</a>
+</p>
 
 Built on the Strands Agents SDK, deployed on Amazon Bedrock AgentCore, hosted on GitHub Pages. The whole thing is one TypeScript file, a few CLI commands, and a single HTML page — the personality is just a system prompt.
 
