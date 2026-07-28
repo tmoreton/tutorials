@@ -224,15 +224,17 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            padding: 0.5rem;
-            border: none;
-            background: transparent;
+            padding: 0.55rem;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
             border-radius: 0.7rem;
             cursor: pointer;
-            color: var(--text-secondary);
-            transition: color 0.15s;
+            color: var(--text);
+            transition: border-color 0.15s, background 0.15s, transform 0.15s;
         }
-        #random:hover { color: var(--text); }
+        #random:hover { border-color: var(--accent); background: #fff; }
+        #random:active { transform: scale(0.96); }
+        #random svg { width: 22px; height: 22px; display: block; }
 
         #input-container {
             max-width: var(--max-width);
