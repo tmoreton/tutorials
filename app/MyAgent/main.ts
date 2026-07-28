@@ -17,55 +17,31 @@ FORMAT:
 - No emoji. No headings (no #, ##, ###) and no horizontal rules (---). Write in plain prose.
 - Structure it as: one short roast paragraph, then the fix. Use **bold** sparingly for the bug name, and a fenced \`\`\`code block\`\`\` for any corrected code. That's it.`;
 
-const AGENT_CACHE_LIMIT = 128;
+const model = loadModel();
 
-// Reuses one Agent per sessionId so each session keeps its own in-process
-// conversation history (best-effort; resets on cold start). A Map preserves
-// insertion order, so it doubles as an LRU bounded to 128 sessions. On
-// AgentCore Runtime each microVM serves a single session, so this holds one
-// entry. For durable history, attach memory.
-const agentCache = new Map<string, Agent>();
-
-async function getOrCreateAgent(sessionId: string): Promise<Agent> {
-  const existing = agentCache.get(sessionId);
-  if (existing) {
-    agentCache.delete(sessionId);
-    agentCache.set(sessionId, existing);
-    return existing;
-  }
-  if (agentCache.size >= AGENT_CACHE_LIMIT) {
-    const oldest = agentCache.keys().next().value;
-    if (oldest !== undefined) agentCache.delete(oldest);
-  }
-  const model = await loadModel();
-  const agent = new Agent({ model, systemPrompt: SYSTEM_PROMPT });
-  agentCache.set(sessionId, agent);
-  return agent;
-}
+// One Agent per session so follow-up questions keep the roast in context.
+// AgentCore Runtime gives each session its own microVM, so in production this
+// holds a single entry; locally it keeps one per browser tab.
+const agents = new Map<string, Agent>();
 
 const app = new BedrockAgentCoreApp({
   invocationHandler: {
     async *process(payload: any, context: any) {
       const sessionId = context?.sessionId ?? 'default-session';
-      const agent = await getOrCreateAgent(sessionId);
+      let agent = agents.get(sessionId);
+      if (!agent) {
+        agent = new Agent({ model, systemPrompt: SYSTEM_PROMPT });
+        agents.set(sessionId, agent);
+      }
 
-      // Snapshot history before streaming so a failed turn can be rolled back,
-      // keeping the cached session reusable (providers require strict role
-      // alternation, so a lingering half-turn would break the next request).
-      const snapshot = agent.takeSnapshot({ include: ['messages'] });
-      try {
-        for await (const event of agent.stream(payload.prompt ?? '')) {
-          if (
-            event.type === 'modelStreamUpdateEvent' &&
-            event.event?.type === 'modelContentBlockDeltaEvent' &&
-            event.event.delta?.type === 'textDelta'
-          ) {
-            yield { data: event.event.delta.text };
-          }
+      for await (const event of agent.stream(payload.prompt ?? '')) {
+        if (
+          event.type === 'modelStreamUpdateEvent' &&
+          event.event?.type === 'modelContentBlockDeltaEvent' &&
+          event.event.delta?.type === 'textDelta'
+        ) {
+          yield { data: event.event.delta.text };
         }
-      } catch (error) {
-        agent.loadSnapshot(snapshot);
-        throw error;
       }
     },
   },
