@@ -122,6 +122,28 @@
             padding: 0 0.5rem;
         }
 
+        /* Assistant label = ASCII duck; waves swim while generating, vanish when done */
+        .duck-label {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.62rem;
+            line-height: 1.1;
+            color: var(--text);
+            padding: 0 0.5rem;
+        }
+        .duck-label .duck-body { white-space: pre; }
+        .duck-label .waves {
+            width: 8ch;
+            overflow: hidden;
+            white-space: pre;
+            color: var(--text-secondary);
+        }
+        .duck-label .waves span { display: inline-block; }
+        .duck-label.swimming .waves span { animation: swim 0.9s linear infinite; }
+        .duck-label:not(.swimming) .waves { display: none; }
+        @keyframes swim { from { transform: translateX(0); } to { transform: translateX(-8ch); } }
+
+        .message-bubble.thinking:empty { display: none; }
+
         .message-bubble {
             padding: 0.9rem 1.05rem;
             border-radius: var(--radius);
@@ -405,8 +427,10 @@
             inputEl.style.height = "auto";
             sendBtn.disabled = true;
 
-            const row = appendMessage("assistant", "Chef Duck is sharpening the knives…", "thinking");
+            const row = appendMessage("assistant", "", "thinking");
             const bubble = row.querySelector(".message-bubble");
+            const duckLabel = row.querySelector(".duck-label");
+            duckLabel.classList.add("swimming"); // duck swims while it works
 
             try {
                 const body = JSON.stringify({ prompt: text });
@@ -468,6 +492,7 @@
                 bubble.classList.remove("thinking");
             }
 
+            duckLabel.classList.remove("swimming"); // duck done — waves vanish
             sendBtn.disabled = false;
             inputEl.focus();
         }
@@ -476,10 +501,21 @@
             const row = document.createElement("div");
             row.className = `message-row ${role}`;
 
-            const label = document.createElement("div");
-            label.className = "message-label";
-            label.textContent = role === "user" ? "You" : "Chef Duck";
-            row.appendChild(label);
+            if (role === "user") {
+                const label = document.createElement("div");
+                label.className = "message-label";
+                label.textContent = "You";
+                row.appendChild(label);
+            } else {
+                // Assistant label is the ASCII duck; a wide strip of waves scrolls
+                // (duplicated so the loop is seamless) while it's generating.
+                const label = document.createElement("div");
+                label.className = "duck-label";
+                label.innerHTML =
+                    '<div class="duck-body">    _\n __(.)&lt;\n \\___)</div>' +
+                    '<div class="waves"><span>~~~~~~~~</span><span>~~~~~~~~</span></div>';
+                row.appendChild(label);
+            }
 
             const bubble = document.createElement("div");
             bubble.className = `message-bubble ${className}`;
