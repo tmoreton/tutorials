@@ -54,7 +54,7 @@ git add . && git commit -m "ship the duck" && git push
 
 The deployed AgentCore endpoint requires SigV4-signed requests, so a browser
 can't call it directly. The `proxy/` folder holds a streaming Lambda (behind
-CloudFront) that signs on the browser's behalf — see [DEPLOYMENT.md](DEPLOYMENT.md)
+CloudFront) that signs on the browser's behalf — see [blogs/deployment-notes.md](blogs/deployment-notes.md)
 for the full setup and the gotchas (`x-amz-content-sha256`, the double invoke
 permission, CORS preflight) that cost an afternoon.
 
@@ -76,10 +76,8 @@ unducked/
 │   └── tsconfig.json
 ├── index.html                # The UI — paste box, ASCII duck, streamed roast
 ├── proxy/                    # Streaming Lambda proxy for the public endpoint
-├── starter/                  # Minimal, self-contained version for the walkthrough
 ├── assets/                   # Hero/OG image, favicon, logos
-├── DEPLOYMENT.md             # How the public deployment actually works
-├── blog-post.md              # The accompanying write-up
+├── blogs/                    # Write-ups: build guide + deployment notes
 └── README.md
 ```
 

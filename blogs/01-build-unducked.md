@@ -1,10 +1,15 @@
 ---
-title: "I Built a Rubber Duck That Roasts Your Code"
+title: "I Built a Rubber Duck That Roasts Your Code (Part 1)"
+series: "Building Unducked"
 published: false
 description: "Rubber-duck debugging, but the duck talks back — and it's Gordon Ramsay. One TypeScript file, a few CLI commands, and an HTML page."
 tags: ai, aws, typescript, tutorial
 cover_image: https://unducked.com/assets/hero.png
 ---
+
+> **Part 1 of the Building Unducked series** — the agent, the roast, and getting it live.
+> Part 2 covers making the deployed endpoint public (the CloudFront + Lambda proxy).
+
 
 Every developer knows rubber-duck debugging: you explain your code to a rubber duck on your desk, and halfway through the explanation you spot the bug yourself. The duck just sits there. Silent. Judging.
 
@@ -226,7 +231,7 @@ Push to GitHub, then **Settings → Pages → Deploy from branch `main`, folder 
 
 There's one wrinkle. The deployed AgentCore endpoint requires AWS SigV4-signed requests — a browser can't call it directly, and you must **never** sign from client-side JS (that ships your AWS credentials in page source). The repo includes a small streaming Lambda proxy behind CloudFront that signs on the browser's behalf. Deploy it, point the frontend's endpoint at the CloudFront URL, and the hosted duck talks to the deployed agent.
 
-The CloudFront-over-Lambda setup has two gotchas that cost me an afternoon: POST bodies need an `x-amz-content-sha256` header, and CloudFront needs *both* `lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` permissions. The repo's `DEPLOYMENT.md` walks through both so you don't repeat them.
+The CloudFront-over-Lambda setup has two gotchas that cost me an afternoon: POST bodies need an `x-amz-content-sha256` header, and CloudFront needs *both* `lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` permissions. The repo's `blogs/deployment-notes.md` walks through both so you don't repeat them.
 
 ---
 
