@@ -219,24 +219,28 @@
             border-top: 1px solid var(--border);
             background: var(--bg);
         }
-        #examples {
+        #actions {
             max-width: var(--max-width);
-            margin: 0 auto 0.6rem;
+            margin: 0.55rem auto 0;
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem;
+            justify-content: center;
         }
-        .chip {
+        #random {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
             font-size: 0.78rem;
-            padding: 0.3rem 0.7rem;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
+            font-family: inherit;
+            padding: 0.35rem 0.8rem;
+            border: 1px dashed var(--border);
+            background: transparent;
             border-radius: 1rem;
             cursor: pointer;
             color: var(--text-secondary);
             transition: border-color 0.15s, color 0.15s;
         }
-        .chip:hover { border-color: var(--accent); color: var(--text); }
+        #random:hover { border-color: var(--accent); color: var(--text); }
+        #random svg { opacity: 0.8; }
 
         #input-container {
             max-width: var(--max-width);
@@ -340,12 +344,24 @@
     </div>
 
     <div id="input-area">
-        <div id="examples"></div>
         <div id="input-container">
             <textarea id="input" name="code" rows="2" placeholder="Paste your code…"
                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                 data-1p-ignore data-lpignore="true" data-form-type="other"></textarea>
             <button id="send-btn" onclick="send()">Roast it</button>
+        </div>
+        <div id="actions">
+            <button id="random" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/>
+                    <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/>
+                    <circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/>
+                    <circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/>
+                    <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                </svg>
+                <span>no code handy? drop in something broken</span>
+            </button>
         </div>
     </div>
 
@@ -373,25 +389,43 @@
         const emptyEl = document.getElementById("empty");
         const inputEl = document.getElementById("input");
         const sendBtn = document.getElementById("send-btn");
-        const examplesEl = document.getElementById("examples");
+        const randomBtn = document.getElementById("random");
 
-        // One-click snippets so people can taste a roast without typing.
-        const EXAMPLES = [
-            { label: "Off-by-one", code: "function last(arr) {\n  return arr[arr.length];\n}" },
-            { label: "Callback pyramid", code: "getUser(id, u => {\n  getOrders(u, o => {\n    getItems(o, i => {\n      render(i);\n    });\n  });\n});" },
-            { label: "== vs ===", code: "if (userInput == 0) {\n  deleteEverything();\n}" },
-            { label: "Empty catch", code: "try {\n  chargeCard(amount);\n} catch (e) {}" },
+        // A pool of deliberately-broken snippets across languages, so anyone can
+        // taste a roast without pasting their own code. One click drops a random one.
+        const BAD_CODE = [
+            // JavaScript
+            "function last(arr) {\n  return arr[arr.length];\n}",
+            "if (userInput == 0) {\n  deleteEverything();\n}",
+            "try {\n  chargeCard(amount);\n} catch (e) {}",
+            "getUser(id, u => {\n  getOrders(u, o => {\n    getItems(o, i => render(i));\n  });\n});",
+            "const nums = [1,2,3];\nfor (let i = 0; i <= nums.length; i++) {\n  console.log(nums[i].toFixed(2));\n}",
+            "async function load() {\n  const res = fetch('/api/data');\n  return res.json();\n}",
+            "let total = 0;\n[10, 20, 30].forEach(async n => {\n  total += await price(n);\n});\nreturn total;",
+            // Python
+            "def add_item(item, items=[]):\n    items.append(item)\n    return items",
+            "def divide(a, b):\n    return a / b\n\nprint(divide(10, 0))",
+            "for i in range(len(rows)):\n    if rows[i] == None:\n        rows.remove(rows[i])",
+            "password = input('password: ')\nif password is 'admin':\n    grant_access()",
+            // Java
+            "public boolean isValid(String s) {\n    if (s == \"yes\") return true;\n    return false;\n}",
+            "int[] a = new int[5];\nfor (int i = 1; i <= 5; i++) {\n    a[i] = i * i;\n}",
+            // Go
+            "func first(items []string) string {\n    return items[0]\n}",
+            "for i := 0; i < len(users); i++ {\n    go func() {\n        process(users[i])\n    }()\n}",
+            // SQL
+            "SELECT * FROM users\nWHERE name = '\" + userName + \"';",
+            // Bash
+            "rm -rf $DIR/*",
+            // CSS
+            ".btn { color: #fff; background: #fff; }",
         ];
-        EXAMPLES.forEach((ex) => {
-            const chip = document.createElement("button");
-            chip.className = "chip";
-            chip.textContent = ex.label;
-            chip.onclick = () => {
-                inputEl.value = ex.code;
-                inputEl.dispatchEvent(new Event("input"));
-                inputEl.focus();
-            };
-            examplesEl.appendChild(chip);
+
+        randomBtn.addEventListener("click", () => {
+            const pick = BAD_CODE[Math.floor(Math.random() * BAD_CODE.length)];
+            inputEl.value = pick;
+            inputEl.dispatchEvent(new Event("input"));
+            inputEl.focus();
         });
 
         inputEl.addEventListener("input", () => {
