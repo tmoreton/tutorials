@@ -1,7 +1,7 @@
 {
   "name": "MyAgent",
   "version": "0.1.0",
-  "description": "AgentCore Runtime Application using Strands TypeScript SDK",
+  "description": "Unducked — the code-roasting rubber duck (Strands agent on AgentCore Runtime)",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,12 +10,10 @@
     "dev": "tsx watch main.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2",
     "@opentelemetry/api": "^1.9.0",
     "@strands-agents/sdk": "^1.5.0",
     "bedrock-agentcore": "^0.3.0",
-    "tsx": "^4.19.0",
-    "zod": "^4.4.3"
+    "tsx": "^4.19.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
