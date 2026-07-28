@@ -71,7 +71,7 @@ npx esbuild index.mjs --bundle --platform=node --target=node22 --format=esm \
 aws lambda create-function --function-name MyAgent-proxy --runtime nodejs22.x \
   --architectures arm64 --handler index.handler --role <role-arn> \
   --zip-file fileb://function.zip --timeout 120 --memory-size 256 \
-  --environment "Variables={AGENT_RUNTIME_ARN=<runtime-arn>,ALLOW_ORIGIN=https://tmoreton.github.io}" \
+  --environment "Variables={AGENT_RUNTIME_ARN=<runtime-arn>,ALLOW_ORIGIN=https://unducked.com,MAX_PROMPT_CHARS=8000}" \
   --region us-west-2
 aws lambda put-function-concurrency --function-name MyAgent-proxy \
   --reserved-concurrent-executions 5 --region us-west-2
@@ -93,6 +93,31 @@ aws lambda add-permission --function-name MyAgent-proxy \
 # 4. Point index.html PROD_API at the CloudFront domain, push, enable Pages.
 ```
 
+## Abuse mitigation (public, no-login)
+
+The endpoint is public and unauthenticated, so the defenses are layered to make abuse
+uneconomical rather than impossible:
+
+1. **Prompt-size cap** — the proxy truncates `prompt` to `MAX_PROMPT_CHARS` (8000) before
+   calling Bedrock, bounding per-request token cost. Env var, no redeploy of logic needed.
+2. **Reserved concurrency** — hard ceiling on throughput (set low, e.g. 2). Excess requests
+   throttle at the proxy, never reaching Bedrock.
+3. **WAF on the CloudFront distribution** — the real rate limiter. Attach a WebACL with a
+   rate-based rule keyed by client IP (evaluation window 1/2/5/10 min; floor 100 req/5 min),
+   action **Challenge** (silent browser proof-of-work — passes for real browsers, fails for
+   curl/headless loops; no login). Optionally add the managed bot-control group.
+
+   ```bash
+   aws wafv2 create-web-acl --name unducked-rate-limit --scope CLOUDFRONT \
+     --region us-east-1 --default-action Allow={} \
+     --visibility-config SampledRequestsEnabled=true,CloudWatchMetricsEnabled=true,MetricName=unducked \
+     --rules '[{"Name":"rate","Priority":0,"Statement":{"RateBasedStatement":{"Limit":100,"AggregateKeyType":"IP","EvaluationWindowSec":300}},"Action":{"Challenge":{}},"VisibilityConfig":{"SampledRequestsEnabled":true,"CloudWatchMetricsEnabled":true,"MetricName":"rate"}}]'
+   # then associate the WebACL ARN with the distribution (CLOUDFRONT scope WebACLs live in us-east-1)
+   ```
+4. **CORS locked to origin** — `ALLOW_ORIGIN=https://unducked.com`. Stops casual cross-site
+   embedding; not a real barrier against curl (CORS is browser-enforced).
+5. **Budget alarm** — the backstop that catches anything the above misses.
+
 ## Teardown
 
-Delete in order: CloudFront distribution (disable, then delete) → OAC → response-headers policy → Lambda + `MyAgent-proxy-role` → `agentcore` stack (`aws cloudformation delete-stack --stack-name AgentCore-MyAgent-default`).
+Delete in order: WAF WebACL (disassociate from distribution first) → CloudFront distribution (disable, then delete) → OAC → response-headers policy → Lambda + `MyAgent-proxy-role` → `agentcore` stack (`aws cloudformation delete-stack --stack-name AgentCore-MyAgent-default`).

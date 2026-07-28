@@ -6,6 +6,9 @@ import {
 const RUNTIME_ARN = process.env.AGENT_RUNTIME_ARN;
 // Lock CORS to the site origin. "*" is allowed for quick demos but prefer the exact origin.
 const ALLOW_ORIGIN = process.env.ALLOW_ORIGIN ?? '*';
+// Cap the prompt size so a single request can't blow up token cost. ~8k chars
+// is plenty for a code snippet; anything larger is abuse, not a roast.
+const MAX_PROMPT_CHARS = parseInt(process.env.MAX_PROMPT_CHARS ?? '8000');
 
 const client = new BedrockAgentCoreClient({});
 
@@ -48,7 +51,7 @@ export const handler = awslambda.streamifyResponse(async (event, responseStream)
     const body = event.body
       ? JSON.parse(event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString() : event.body)
       : {};
-    const prompt = body.prompt ?? '';
+    const prompt = (body.prompt ?? '').slice(0, MAX_PROMPT_CHARS);
 
     const headerSession =
       event.headers?.['x-amzn-bedrock-agentcore-runtime-session-id'] ??
