@@ -9,7 +9,7 @@ Browser (GitHub Pages)
   → CloudFront distribution  (public HTTPS, injects CORS, SigV4-signs to origin via OAC)
     → Lambda Function URL     (AUTH_TYPE = AWS_IAM, streaming proxy)
       → AgentCore Runtime     (InvokeAgentRuntime)
-        → Amazon Bedrock       (Nova Micro)
+        → Amazon Bedrock       (Nova Lite)
 ```
 
 Local dev keeps the simple path: the frontend detects `localhost` and calls `agentcore dev` on `http://localhost:8080/invocations` directly.
@@ -21,7 +21,7 @@ Local dev keeps the simple path: the frontend detects `localhost` and calls `age
 | Region (agent + Lambda) | `us-west-2` |
 | AgentCore Runtime ARN | `arn:aws:bedrock-agentcore:us-west-2:253170388727:runtime/MyAgent_MyAgent-FMV4cF8yar` |
 | CloudFormation stack | `AgentCore-MyAgent-default` |
-| Model | `us.amazon.nova-micro-v1:0` (see `app/MyAgent/model/load.ts`) |
+| Model | `us.amazon.nova-lite-v1:0` (see `app/MyAgent/model/load.ts`) |
 | Proxy Lambda | `MyAgent-proxy` (nodejs22, arm64, RESPONSE_STREAM, reserved concurrency 5) |
 | Lambda role | `MyAgent-proxy-role` |
 | CloudFront distribution | `E1QLW6Q26MYNBG` → `d1tot2sdhkxrue.cloudfront.net` |

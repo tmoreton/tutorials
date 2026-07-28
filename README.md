@@ -15,7 +15,7 @@ Browser (unducked.com)
   → CloudFront + Lambda proxy   (public HTTPS; signs requests for the browser)
     → AgentCore Runtime          (hosted agent endpoint)
       → Strands Agent            (Chef Duck persona)
-        → Bedrock (Claude Haiku 4.5)
+        → Bedrock (Amazon Nova Lite)
 ```
 
 Locally, the frontend skips the proxy and talks straight to `agentcore dev` on `localhost:8080`.
@@ -25,7 +25,7 @@ Locally, the frontend skips the proxy and talks straight to `agentcore dev` on `
 - AWS account with credentials configured
 - Node.js 22+ and npm
 - The AgentCore CLI: `npm install -g @aws/agentcore`
-- Claude Haiku 4.5 access enabled in Bedrock
+- Amazon Nova Lite access enabled in Bedrock
 
 ## Quick start (local)
 
@@ -71,7 +71,7 @@ the prompt did.
 unducked/
 ├── app/MyAgent/
 │   ├── main.ts               # The agent — Chef Duck persona + streaming server
-│   ├── model/load.ts         # Which Bedrock model (Claude Haiku 4.5)
+│   ├── model/load.ts         # Which Bedrock model (Amazon Nova Lite)
 │   ├── package.json
 │   └── tsconfig.json
 ├── index.html                # The UI — paste box, ASCII duck, streamed roast
@@ -85,7 +85,7 @@ unducked/
 
 ## Cost & safety
 
-Claude Haiku 4.5 is ~$1/$5 per million tokens on Bedrock — fractions of a cent
+Amazon Nova Lite is ~$0.06/$0.24 per million tokens on Bedrock — a fraction of a cent
 per roast. The public endpoint is unauthenticated, so the Lambda proxy has a
 reserved-concurrency cap (2) to bound spend. Add an AWS budget alarm if you
 share it widely.

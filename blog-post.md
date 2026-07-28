@@ -25,7 +25,7 @@ The "AI" here isn't complicated. An agent is just a model with a personality bol
 Here's the shape of what we're building:
 
 ```text
-Browser (HTML + JS) → AgentCore Runtime (hosted endpoint) → Strands Agent → Bedrock (Claude Haiku)
+Browser (HTML + JS) → AgentCore Runtime (hosted endpoint) → Strands Agent → Bedrock (Amazon Nova Lite)
 ```
 
 You write a Strands agent in TypeScript. The AgentCore CLI deploys it as a hosted endpoint on AWS. Your frontend sends code to that endpoint and streams the roast back.
@@ -140,7 +140,7 @@ Three pieces:
 
 > **Gotcha that cost me time:** the stream emits several event types, and you can only reach `event.event` after narrowing on `event.type` first. The three-part `if` above is what actually compiles — a bare `event.event?.delta?.type` throws a TypeScript error. Copy it exactly.
 
-`loadModel()` points at **Claude Haiku 4.5** — fast, cheap (~$1/$5 per million tokens on Bedrock), and sharp enough that it doesn't invent bugs in clean code, which cheaper models tend to do. Swap the model ID in `model/load.ts` for something heavier if you want.
+`loadModel()` points at **Amazon Nova Lite** — ~$0.06/$0.24 per million tokens on Bedrock, so roasts cost a fraction of a cent. The trick to making a cheap model behave is in the system prompt: cheap models love to "help" by suggesting type checks and validation on code that already works, so the prompt explicitly forbids that and tells the duck to just concede when the code is fine. Swap the model ID in `model/load.ts` for Claude Haiku or Sonnet if you want more polish.
 
 ---
 
@@ -232,7 +232,7 @@ The CloudFront-over-Lambda setup has two gotchas that cost me an afternoon: POST
 
 ## Watch the bill
 
-The endpoint is public and unauthenticated — anyone with the URL can spend your Bedrock tokens. Haiku 4.5 is cheap (fractions of a cent per roast), but set a **reserved-concurrency cap on the Lambda** (I use 2) and an AWS budget alarm so a viral moment doesn't become a surprise invoice.
+The endpoint is public and unauthenticated — anyone with the URL can spend your Bedrock tokens. Nova Lite is cheap (a fraction of a cent per roast), but set a **reserved-concurrency cap on the Lambda** (I use 2) and an AWS budget alarm so a viral moment doesn't become a surprise invoice.
 
 ---
 
@@ -241,7 +241,7 @@ The endpoint is public and unauthenticated — anyone with the URL can spend you
 | Layer | What | How |
 |-------|------|-----|
 | Personality | A system prompt | The whole product, really |
-| Model | Claude Haiku 4.5 | Amazon Bedrock |
+| Model | Amazon Nova Lite | Amazon Bedrock |
 | Agent | ~30 lines of TypeScript | Strands Agents SDK + AgentCore |
 | Backend hosting | `agentcore deploy` | AgentCore Runtime |
 | Public endpoint | Streaming Lambda + CloudFront | Signs requests for the browser |
