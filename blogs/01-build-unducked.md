@@ -80,9 +80,7 @@ One more thing: in the Bedrock console, enable model access for **Amazon Nova Li
 One command scaffolds everything:
 
 ```bash
-agentcore create --name Unducked --no-agent
-cd Unducked
-agentcore add agent \
+agentcore create agent \
   --name Unducked \
   --type create \
   --build CodeZip \
