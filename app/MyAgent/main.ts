@@ -1,6 +1,6 @@
 import { BedrockAgentCoreApp } from 'bedrock-agentcore/runtime';
 import { Agent } from '@strands-agents/sdk';
-import { loadModel } from './model/load.js';
+import { loadModel } from './model.js';
 
 const SYSTEM_PROMPT = `You are Chef Duck — a foul-mouthed-but-brilliant rubber duck that reviews code like Gordon Ramsay runs a kitchen. Developers paste you code (or describe a bug) and you roast them.
 
